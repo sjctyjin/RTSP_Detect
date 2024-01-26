@@ -19,6 +19,7 @@ import ast  # 用於安全地將字符串轉換為數組
 import os
 import imutils
 import psutil
+from PIL.ImageQt import ImageQt
 
 os.environ['TF_FORCE_GPU_ALLOW_GROWTH'] = 'true'
 class ClickableLabelEventFilter(QtCore.QObject):
@@ -52,7 +53,7 @@ class PyQt_MVC_Main(QMainWindow):
         self.timer.timeout.connect(self.update_time)
         self.timer.start(1000)  # 更新間隔設置為 1000 毫秒（1 秒）
         self.CAM_THREAD = None
-
+        self.ui.label.setScaledContents(True)
         # self.ui.Setup_img = CustomLabel("Click or Double Click Me", self)
         # self.ui.Setup_img.clicked.connect(self.on_click)
 
@@ -76,27 +77,9 @@ class PyQt_MVC_Main(QMainWindow):
         while self.Reset_Frame_var[0]:
             print("外迴圈中...")
             cam_ip = self.camIP
-            # if self.Reset_Frame_var == 1:
-            #     print("跳出外迴圈")
-            #     self.Reset_Frame_var = 0
-            #     del cap
-            #     del frame
-            #     del output_image
-            #     del crop_part
-            #     del mpHands
-            #     del hands
-            #     del point_list
-            #
-            #     del process
-            #     del memory_info
-            #
-            #     del mpDraw
-            #     del handLmsStyle
-            #     del handConStyle
-            #     del cam_ip
-            #     break
+
             try:
-                cap = cv2.VideoCapture(cam_ip)  # 設定攝影機鏡頭
+                cap = cv2.VideoCapture(0)  # 設定攝影機鏡頭
                 # self.Reset_Frame_var = 0
                 # 加载手部检测函数
                 mpHands = mp.solutions.hands
@@ -354,21 +337,19 @@ class PyQt_MVC_Main(QMainWindow):
         # self.ui.label.setText("直播中")
         try:
             # img = imutils.resize(img, width=1280)
-            img = cv2.resize(img, (1280, 800))  # 根据需要调整尺寸
+            # img = cv2.resize(img, (1280, 800))  # 根据需要调整尺寸
             height, width, channel = img.shape  # 讀取尺寸和 channel數量
             bytesPerline = channel * width  # 設定 bytesPerline ( 轉換使用 )
             print("調整後 : ",img.shape[:2])
-            img = QImage(img, width, height, bytesPerline, QImage.Format_RGB888)
-            pixmap = QPixmap.fromImage(img)
+            img = QImage(img, width, height, bytesPerline, QImage.Format_RGB888).copy()
+            pixmap = QPixmap.fromImage(img).copy()
 
             self.ui.label.clear()  # 清除以前的图像
-            self.ui.label.setScaledContents(True)
-            # previous_pixmap = self.ui.label.pixmap()
-            # if previous_pixmap is not None:
-            #     previous_pixmap = None  # 将之前的Pixmap对象设置为None，释放内存
             if self.ui.label.pixmap():
                 self.ui.label.pixmap().dispose()
             self.ui.label.setPixmap(pixmap)  # QLabel 顯示影像
+            self.ui.label.adjustSize()
+
             del pixmap#釋放Qpixmap資源
             # del previous_pixmap#釋放Qpixmap資源
             del img#釋放Qpixmap資源
