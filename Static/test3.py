@@ -20,6 +20,11 @@ class ImageCaptureThread(QThread):
                     # 将OpenCV图像转换为QImage
                     img = QImage(frame, frame.shape[1], frame.shape[0], frame.strides[0], QImage.Format_RGB888)
                     self.image_signal.emit(img)
+                    process = psutil.Process()
+                    memory_info = process.memory_info()
+                    print("偵測 : -", time.strftime('%Y-%m-%d %H:%M:%S'))
+                    print(f"Virtual Memory Usage: {memory_info.vms / (1024 * 1024)} MB")
+                    print(f"Physical Memory Usage: {memory_info.rss / (1024 * 1024)} MB")
                 else:
                     print("wait")
                 # time.sleep(0.1)

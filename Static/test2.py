@@ -1,53 +1,50 @@
-import sys
+import cv2
+import threading
 import time
-from PyQt5.QtCore import Qt, QThread, pyqtSignal
-from PyQt5.QtWidgets import QApplication, QMainWindow, QPushButton
+import psutil
+import gc
 
-class WorkerThread(QThread):
-    finished = pyqtSignal()
+cap = None  # 初始化摄像头变量
 
-    def run(self):
-        while self.isRunning():
-            print("Thread is running...")
+def open_camera():
+    global cap
+    if cap is None or not cap.isOpened():
+        cap = cv2.VideoCapture(0)
+
+def release_camera():
+    global cap
+    if cap is not None and cap.isOpened():
+        cap.release()
+        cap = None
+
+def run(k, m):
+    log_file = "event_log.txt"
+    while True:
+        open_camera()  # 打开摄像头
+        while m:
+            if cap.isOpened():
+                ret, frame = cap.read()
+                if ret:
+                    process = psutil.Process()
+                    memory_info = process.memory_info()
+                    print("偵測 : -", time.strftime('%Y-%m-%d %H:%M:%S'))
+                    print(f"Virtual Memory Usage: {memory_info.vms / (1024 * 1024)} MB")
+                    print(f"Physical Memory Usage: {memory_info.rss / (1024 * 1024)} MB")
             time.sleep(1)
-        self.finished.emit()
+            with open(log_file, "a") as file:
+                # 写入事件紀錄，包括时间和描述
+                file.write(f"=============================================================\n"
+                           f"Virtual Memory Usage :{memory_info.vms / (1024 * 1024)}MB\n"
+                           f"Physical Memory Usage:{memory_info.rss / (1024 * 1024)}\n"
+                           f"偵測時間 : {time.strftime('%Y-%m-%d %H:%M:%S')}\n"
+                           f"=============================================================\n")
 
-class MainWindow(QMainWindow):
-    def __init__(self):
-        super().__init__()
+            break
 
-        self.worker_thread = WorkerThread()
-        self.worker_thread.finished.connect(self.on_thread_finished)
+        release_camera()  # 释放摄像头
 
-        self.start_button = QPushButton("Start Thread", self)
-        self.start_button.clicked.connect(self.start_thread)
-
-        self.stop_button = QPushButton("Stop Thread", self)
-        self.stop_button.clicked.connect(self.stop_thread)
-        self.stop_button.setEnabled(False)
-
-        self.start_button.setGeometry(50, 50, 100, 30)
-        self.stop_button.setGeometry(200, 50, 100, 30)
-
-    def start_thread(self):
-        if not self.worker_thread.isRunning():
-            self.worker_thread.start()
-            self.start_button.setEnabled(False)
-            self.stop_button.setEnabled(True)
-
-    def stop_thread(self):
-        if self.worker_thread.isRunning():
-            self.worker_thread.quit()
-            self.worker_thread.wait()
-            self.start_button.setEnabled(True)
-            self.stop_button.setEnabled(False)
-
-    def on_thread_finished(self):
-        print("Thread has finished.")
-
-if __name__ == '__main__':
-    app = QApplication(sys.argv)
-    window = MainWindow()
-    window.setGeometry(100, 100, 400, 200)
-    window.show()
-    sys.exit(app.exec_())
+if __name__ == "__main__":
+    webcam_id = 0  # 通常情况下，0 表示默认的 webcam
+    k = 1
+    m = 1
+    run(k, m)

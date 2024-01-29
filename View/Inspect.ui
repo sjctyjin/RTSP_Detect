@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1651</width>
-    <height>982</height>
+    <width>1826</width>
+    <height>1181</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -709,14 +709,14 @@ QPushButton:focus {
                <widget class="QLabel" name="label">
                 <property name="minimumSize">
                  <size>
-                  <width>100</width>
-                  <height>100</height>
+                  <width>1200</width>
+                  <height>720</height>
                  </size>
                 </property>
                 <property name="maximumSize">
                  <size>
-                  <width>1280</width>
-                  <height>800</height>
+                  <width>1200</width>
+                  <height>720</height>
                  </size>
                 </property>
                 <property name="font">
@@ -1217,8 +1217,8 @@ QPushButton:focus {
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1651</width>
-     <height>25</height>
+     <width>1826</width>
+     <height>21</height>
     </rect>
    </property>
   </widget>

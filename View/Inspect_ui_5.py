@@ -14,7 +14,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
-        MainWindow.resize(1651, 982)
+        MainWindow.resize(1826, 1181)
         MainWindow.setStyleSheet("QPushButton:hover{\n"
 "background-color: #fff;\n"
 " color: #000;\n"
@@ -329,8 +329,8 @@ class Ui_MainWindow(object):
         self.formLayout_2.setWidget(4, QtWidgets.QFormLayout.FieldRole, self.Main_Crop10)
         self.gridLayout.addWidget(self.frame_2, 1, 1, 1, 1, QtCore.Qt.AlignHCenter|QtCore.Qt.AlignVCenter)
         self.label = QtWidgets.QLabel(self.Main_frame)
-        self.label.setMinimumSize(QtCore.QSize(100, 100))
-        self.label.setMaximumSize(QtCore.QSize(1280, 800))
+        self.label.setMinimumSize(QtCore.QSize(1200, 720))
+        self.label.setMaximumSize(QtCore.QSize(1200, 720))
         font = QtGui.QFont()
         font.setPointSize(30)
         self.label.setFont(font)
@@ -552,7 +552,7 @@ class Ui_MainWindow(object):
         self.statusbar.setObjectName("statusbar")
         MainWindow.setStatusBar(self.statusbar)
         self.menubar = QtWidgets.QMenuBar(MainWindow)
-        self.menubar.setGeometry(QtCore.QRect(0, 0, 1651, 25))
+        self.menubar.setGeometry(QtCore.QRect(0, 0, 1826, 21))
         self.menubar.setObjectName("menubar")
         MainWindow.setMenuBar(self.menubar)
 

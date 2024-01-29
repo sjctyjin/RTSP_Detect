@@ -1,7 +1,7 @@
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 from View.Inspect_ui_5 import *
-from PyQt5.QtWidgets import QMainWindow
+from PyQt5.QtWidgets import QMainWindow,QApplication
 from PyQt5.QtCore import pyqtSlot
 from Model.m_detect import *
 import sys
@@ -19,6 +19,7 @@ import ast  # 用於安全地將字符串轉換為數組
 import os
 import imutils
 import psutil
+import queue
 from PIL.ImageQt import ImageQt
 
 os.environ['TF_FORCE_GPU_ALLOW_GROWTH'] = 'true'
@@ -30,6 +31,7 @@ class ClickableLabelEventFilter(QtCore.QObject):
             self.clicked.emit()
         return super().eventFilter(obj, event)
 
+        
 class PyQt_MVC_Main(QMainWindow):
 
     def __init__(self,parent=None):
@@ -39,7 +41,7 @@ class PyQt_MVC_Main(QMainWindow):
         self.setWindowTitle(f'勝品電通-包裝線偵測')
         self.setWindowIcon(QIcon('Static/bitbug_favicon.ico'))
         self.camIP = "rtsp://192.168.1.105/stream1"
-        self.Set_CVZone = 0 #設定區域時啟動
+        self.Set_CVZone = 0 #人員欲設定產品區域時啟動
         self.Set_ZoneCount = "" #保存設定區的數量
         self.Set_Prodict_ID = "" #保存設定區的物品ID
         self.Current_Prodict_ID = "" #當前主頁面的產品ID
@@ -52,7 +54,10 @@ class PyQt_MVC_Main(QMainWindow):
         self.timer = QtCore.QTimer(self)
         self.timer.timeout.connect(self.update_time)
         self.timer.start(1000)  # 更新間隔設置為 1000 毫秒（1 秒）
-        self.CAM_THREAD = None
+        self.img_timer = QtCore.QTimer(self)
+        self.img_timer.timeout.connect(self.receive_Qimg)
+        self.img_timer.start(80)  # 更新間隔設置為 1000 毫秒（1 秒）
+        # self.CAM_THREAD = None
         self.ui.label.setScaledContents(True)
         # self.ui.Setup_img = CustomLabel("Click or Double Click Me", self)
         # self.ui.Setup_img.clicked.connect(self.on_click)
@@ -66,20 +71,32 @@ class PyQt_MVC_Main(QMainWindow):
         # 設置全屏
 
         self.showFullScreen()
-
         # 設置無邊框窗口，隱藏任務欄
         # self.setWindowFlags(QtCore.Qt.Window | QtCore.Qt.FramelessWindowHint)
     def on_click(self):
         print("Label clicked")
     def cam(self):
-        global Set_CVZone
         box_alpha = 0.5
         while self.Reset_Frame_var[0]:
+            # 查看消耗資源
+            process = psutil.Process()
+            memory_info = process.memory_info()
+            print("偵測 : -", time.strftime('%Y-%m-%d %H:%M:%S'))
+            print(f"Virtual Memory Usage: {memory_info.vms / (1024 * 1024)} MB")
+            print(f"Physical Memory Usage: {memory_info.rss / (1024 * 1024)} MB")
+            with open("event_log.txt", "a") as file:
+                # 写入事件紀錄，包括时间和描述
+                file.write(f"=============================================================\n"
+                           f"Virtual Memory Usage :{memory_info.vms / (1024 * 1024)}MB\n"
+                           f"Physical Memory Usage:{memory_info.rss / (1024 * 1024)}\n"
+                           f"偵測時間 : {time.strftime('%Y-%m-%d %H:%M:%S')}\n"
+                           f"=============================================================\n")
+
             print("外迴圈中...")
             cam_ip = self.camIP
 
             try:
-                cap = cv2.VideoCapture(0)  # 設定攝影機鏡頭
+                cap = cv2.VideoCapture(cam_ip)  # 設定攝影機鏡頭
                 # self.Reset_Frame_var = 0
                 # 加载手部检测函数
                 mpHands = mp.solutions.hands
@@ -107,8 +124,8 @@ class PyQt_MVC_Main(QMainWindow):
                     ret, frame = cap.read()  # 讀取攝影機畫面
                     if ret:
                         frame = cv2.flip(frame, 1)
-                        print("有幀")
-                        print("尺寸 : ",frame.shape[:2])
+                        # print("有幀")
+                        # print("尺寸 : ",frame.shape[:2])
                         # frame = cv2.resize(frame, (1280, 800))  # 根据需要调整尺寸
                     else:
                         print("no ret-",time.strftime("%Y-%m-%d %H:%M:%S"))
@@ -176,7 +193,6 @@ class PyQt_MVC_Main(QMainWindow):
                                 print("條碼號未找到-發生錯誤")
                         # print("設店前")
                         # if point_list:
-                        print("偵測 : -",time.strftime('%Y-%m-%d %H:%M:%S'))
                         try:
                             # print("畫框線",point_list)
                             for i in point_list:
@@ -258,7 +274,7 @@ class PyQt_MVC_Main(QMainWindow):
                                             if check_index_inter == 1 and check_thumb_inter == 1 and gesture_result == "hold":
                                                 check_inter_time[0] += 1
                                                 print("左手 : ", check_inter_time[0])
-                                                if check_inter_time[0] >= 20:
+                                                if check_inter_time[0] >= 12:
                                                     check_box_num[ckb] = 1
 
                                             elif check_index_inter == 1 and check_thumb_inter == 1 and gesture_result == "張開手":
@@ -276,7 +292,7 @@ class PyQt_MVC_Main(QMainWindow):
                                             if check_index_inter == 1 and check_thumb_inter == 1 and gesture_result == "hold":
                                                 check_inter_time[1] += 1
                                                 print("右手 : ", check_inter_time[1])
-                                                if check_inter_time[1] >= 20:
+                                                if check_inter_time[1] >= 12:
                                                     check_box_num[ckb] = 1
 
                                             elif check_index_inter == 1 and check_thumb_inter == 1 and gesture_result == "張開手":
@@ -292,31 +308,22 @@ class PyQt_MVC_Main(QMainWindow):
                             crop_part = []
                             if len(check_box_num) != 0:
                                 for s in range(len(check_box_num)):  # 遍歷box數量
-                                    print("第_",s,"張時_卡住")
-
                                     crop = cv2.cvtColor(output_image[s], cv2.COLOR_BGR2RGB)  # 轉換成 RGB
                                     crop = cv2.resize(crop, (600, 400))
                                     crop_part.append(crop)
-                                self.ImaMatrix_part = crop_part
+                                self.ImaMatrix_part = crop_part#將分割圖象存放於全域變數
 
                         except:
                             print("建置分割圖發生錯誤")
                             print(len(check_box_num))
-                                # self.ui.label_6.setPixmap(QPixmap.fromImage(img))  # QLabel 顯示影像
-                                # cv2.imshow(f'frame_{ckb}', output_image[ckb])
                         frame = cv2.cvtColor(orig, cv2.COLOR_BGR2RGB)  # 轉換成 RGB
-                        # self.ImaMatrix = frame
+                        self.ImaMatrix = frame
                         # height, width, channel = frame.shape  # 讀取尺寸和 channel數量
                         # bytesPerline = channel * width  # 設定 bytesPerline ( 轉換使用 )
                         # # 轉換影像為 QImage，讓 PyQt5 可以讀取
                         # img = QImage(frame, width, height, bytesPerline, QImage.Format_RGB888)
-                        threading.Thread(target=PyQt_MVC_Main.receive_Qimg, args=(self,frame)).start()
+                        # threading.Thread(target=PyQt_MVC_Main.receive_Qimg, args=(self,frame)).start()
                         # self.receive_Qimg(frame)
-                        process = psutil.Process()
-                        memory_info = process.memory_info()
-                        print(f"Virtual Memory Usage: {memory_info.vms / (1024 * 1024)} MB")
-                        print(f"Physical Memory Usage: {memory_info.rss / (1024 * 1024)} MB")
-
                     except:
                         if self.Reset_Frame_var[0] == False:
                             print("列外事項-跳出內迴圈")
@@ -332,55 +339,64 @@ class PyQt_MVC_Main(QMainWindow):
             finally:
                 cap.release()  # 釋放攝影機資源
                 print("線程結束")
-    def receive_Qimg(self,img):
-        print("被執行")
-        # self.ui.label.setText("直播中")
-        try:
-            # img = imutils.resize(img, width=1280)
-            # img = cv2.resize(img, (1280, 800))  # 根据需要调整尺寸
-            height, width, channel = img.shape  # 讀取尺寸和 channel數量
-            bytesPerline = channel * width  # 設定 bytesPerline ( 轉換使用 )
-            print("調整後 : ",img.shape[:2])
-            img = QImage(img, width, height, bytesPerline, QImage.Format_RGB888).copy()
-            pixmap = QPixmap.fromImage(img).copy()
+    def receive_Qimg(self):
+        if self.ImaMatrix != []:
+            # print("被執行")
+            img = self.ImaMatrix
+            try:
+                # img = imutils.resize(img, width=1280)
+                # img = cv2.resize(img, (1280, 800))  # 根据需要调整尺寸
+                height, width, channel = img.shape  # 讀取尺寸和 channel數量
+                bytesPerline = channel * width  # 設定 bytesPerline ( 轉換使用 )
+                # print("調整後 : ",img.shape[:2])
+                img = QImage(img, width, height, bytesPerline, QImage.Format_RGB888).copy()
+                pixmap = QPixmap.fromImage(img).copy()
 
-            self.ui.label.clear()  # 清除以前的图像
-            if self.ui.label.pixmap():
-                self.ui.label.pixmap().dispose()
-            self.ui.label.setPixmap(pixmap)  # QLabel 顯示影像
-            self.ui.label.adjustSize()
+                self.ui.label.clear()  # 清除以前的图像
+                if self.ui.label.pixmap():
+                    self.ui.label.pixmap().dispose()
+                QApplication.processEvents()
+                self.ui.label.setPixmap(pixmap)  # QLabel 顯示影像
+                # self.ui.label.adjustSize()
 
-            del pixmap#釋放Qpixmap資源
-            # del previous_pixmap#釋放Qpixmap資源
-            del img#釋放Qpixmap資源
-            del bytesPerline#釋放Qpixmap資源
-            del height#釋放Qpixmap資源
-            del width#釋放Qpixmap資源
-            del channel#釋放Qpixmap資源
-            # pixmap.delete()
-            # time.sleep(0.03)
-            if self.check_box_count != 0:
-                for cbk in range(self.check_box_count):
-                    height_p, width_p, channel = self.ImaMatrix_part[cbk].shape  # 讀取尺寸和 channel數量
-                    bytesPerline = channel * width_p  # 設定 bytesPerline ( 轉換使用 )
-                    # 轉換影像為 QImage，讓 PyQt5 可以讀取
-                    crop_img = QImage(self.ImaMatrix_part[cbk], width_p, height_p, bytesPerline, QImage.Format_RGB888)
-                    cvp = QPixmap.fromImage(crop_img)
+                del pixmap#釋放Qpixmap資源
+                # del previous_pixmap#釋放Qpixmap資源
+                del img#釋放Qpixmap資源
+                del bytesPerline#釋放Qpixmap資源
+                self.ImaMatrix = []#將影像矩陣清空
+                # pixmap.delete()
+                # time.sleep(0.03)
+                if self.check_box_count != 0:
+                    for cbk in range(self.check_box_count):
+                        height_p, width_p, channel = self.ImaMatrix_part[cbk].shape  # 讀取尺寸和 channel數量
+                        bytesPerline = channel * width_p  # 設定 bytesPerline ( 轉換使用 )
+                        # 轉換影像為 QImage，讓 PyQt5 可以讀取
+                        crop_img = QImage(self.ImaMatrix_part[cbk], width_p, height_p, bytesPerline, QImage.Format_RGB888)
+                        cvp = QPixmap.fromImage(crop_img)
 
-                    self.Main_img[cbk].clear()  # 清除以前的图像
-                    previous_pixmap = self.ui.label.pixmap()
-                    if previous_pixmap is not None:
-                        previous_pixmap = None  # 将之前的Pixmap对象设置为None，释放内存
-                    self.Main_img[cbk].setPixmap(cvp)
-                    del cvp
-                    del previous_pixmap
-                    # self.Main_img[s].setText(f"設定{s}張")
-        except:
-            print(traceback.print_exc())
-        # self.ui.label.setText("直播中...")
+                        self.Main_img[cbk].clear()  # 清除以前的图像
+                        previous_pixmap = self.ui.label.pixmap()
+                        if previous_pixmap is not None:
+                            previous_pixmap = None  # 将之前的Pixmap对象设置为None，释放内存
+                        self.Main_img[cbk].setPixmap(cvp)
+                        del cvp
+                        del previous_pixmap
+                        # self.Main_img[s].setText(f"設定{s}張")
+            except:
+                print(traceback.print_exc())
+        else:
+            print("空值")
+            self.Reset_Frame_var[0] = False
+            time.sleep(1)
+            self.Reset_Frame_var[0] = True
+            threading.Thread(target=PyQt_MVC_Main.cam, args=(self,)).start()
+            time.sleep(6)
+
+
+
     def linkEvent(self):
-        self.CAM_THREAD = threading.Thread(target=PyQt_MVC_Main.cam, args=(self,))
-        self.CAM_THREAD.start()
+        threading.Thread(target=PyQt_MVC_Main.cam, args=(self,)).start()
+        # self.CAM_THREAD.start()
         self.ui.stackedWidget.setCurrentIndex(0)#起始頁面
         self.ui.Main_Cam_IP.setText(self.camIP)
         self.ui.BackSetup.pressed.connect(self.BackForm1)
