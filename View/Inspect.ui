@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1826</width>
-    <height>1181</height>
+    <width>1931</width>
+    <height>1312</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -256,6 +256,43 @@ QMessageBox QLabel {
               <property name="topMargin">
                <number>0</number>
               </property>
+              <item row="2" column="1">
+               <widget class="QFrame" name="frame_3">
+                <property name="minimumSize">
+                 <size>
+                  <width>450</width>
+                  <height>0</height>
+                 </size>
+                </property>
+                <property name="maximumSize">
+                 <size>
+                  <width>16777215</width>
+                  <height>16777215</height>
+                 </size>
+                </property>
+                <property name="frameShape">
+                 <enum>QFrame::StyledPanel</enum>
+                </property>
+                <property name="frameShadow">
+                 <enum>QFrame::Raised</enum>
+                </property>
+                <layout class="QVBoxLayout" name="verticalLayout_2">
+                 <item>
+                  <widget class="QPushButton" name="pushButton_2">
+                   <property name="minimumSize">
+                    <size>
+                     <width>100</width>
+                     <height>100</height>
+                    </size>
+                   </property>
+                   <property name="text">
+                    <string>PushButton</string>
+                   </property>
+                  </widget>
+                 </item>
+                </layout>
+               </widget>
+              </item>
               <item row="2" column="0">
                <widget class="QFrame" name="frame_4">
                 <property name="minimumSize">
@@ -310,47 +347,10 @@ QMessageBox QLabel {
                     </font>
                    </property>
                    <property name="text">
-                    <string>TextLabel</string>
+                    <string/>
                    </property>
                    <property name="alignment">
                     <set>Qt::AlignBottom|Qt::AlignRight|Qt::AlignTrailing</set>
-                   </property>
-                  </widget>
-                 </item>
-                </layout>
-               </widget>
-              </item>
-              <item row="2" column="1">
-               <widget class="QFrame" name="frame_3">
-                <property name="minimumSize">
-                 <size>
-                  <width>450</width>
-                  <height>0</height>
-                 </size>
-                </property>
-                <property name="maximumSize">
-                 <size>
-                  <width>16777215</width>
-                  <height>16777215</height>
-                 </size>
-                </property>
-                <property name="frameShape">
-                 <enum>QFrame::StyledPanel</enum>
-                </property>
-                <property name="frameShadow">
-                 <enum>QFrame::Raised</enum>
-                </property>
-                <layout class="QVBoxLayout" name="verticalLayout_2">
-                 <item>
-                  <widget class="QPushButton" name="pushButton_2">
-                   <property name="minimumSize">
-                    <size>
-                     <width>100</width>
-                     <height>100</height>
-                    </size>
-                   </property>
-                   <property name="text">
-                    <string>PushButton</string>
                    </property>
                   </widget>
                  </item>
@@ -453,252 +453,19 @@ top:-20px</string>
                      </widget>
                     </item>
                     <item>
-                     <widget class="QPushButton" name="Leave">
-                      <property name="minimumSize">
-                       <size>
-                        <width>50</width>
-                        <height>20</height>
-                       </size>
-                      </property>
-                      <property name="maximumSize">
-                       <size>
-                        <width>16777215</width>
-                        <height>50</height>
-                       </size>
-                      </property>
-                      <property name="styleSheet">
-                       <string notr="true">QPushButton:hover,
-QPushButton:focus {
-  background-color: #ea0101;
-  border: 3px solid #9ac3fe;
-}</string>
-                      </property>
+                     <widget class="QPushButton" name="Main_Connected">
                       <property name="text">
-                       <string>X</string>
+                       <string>連線</string>
                       </property>
                      </widget>
                     </item>
                    </layout>
                   </widget>
                  </item>
-                 <item row="0" column="1">
+                 <item row="0" column="1" alignment="Qt::AlignVCenter">
                   <widget class="QPushButton" name="Main_finger_detect">
                    <property name="text">
                     <string>偵測手勢</string>
-                   </property>
-                  </widget>
-                 </item>
-                </layout>
-               </widget>
-              </item>
-              <item row="1" column="1" alignment="Qt::AlignHCenter|Qt::AlignVCenter">
-               <widget class="QFrame" name="frame_2">
-                <property name="minimumSize">
-                 <size>
-                  <width>450</width>
-                  <height>100</height>
-                 </size>
-                </property>
-                <property name="maximumSize">
-                 <size>
-                  <width>450</width>
-                  <height>800</height>
-                 </size>
-                </property>
-                <property name="frameShape">
-                 <enum>QFrame::StyledPanel</enum>
-                </property>
-                <property name="frameShadow">
-                 <enum>QFrame::Raised</enum>
-                </property>
-                <layout class="QFormLayout" name="formLayout_2">
-                 <item row="0" column="0">
-                  <widget class="QLabel" name="Main_Crop1">
-                   <property name="minimumSize">
-                    <size>
-                     <width>200</width>
-                     <height>100</height>
-                    </size>
-                   </property>
-                   <property name="maximumSize">
-                    <size>
-                     <width>600</width>
-                     <height>400</height>
-                    </size>
-                   </property>
-                   <property name="text">
-                    <string>TextLabel</string>
-                   </property>
-                  </widget>
-                 </item>
-                 <item row="0" column="1">
-                  <widget class="QLabel" name="Main_Crop6">
-                   <property name="minimumSize">
-                    <size>
-                     <width>200</width>
-                     <height>100</height>
-                    </size>
-                   </property>
-                   <property name="maximumSize">
-                    <size>
-                     <width>600</width>
-                     <height>400</height>
-                    </size>
-                   </property>
-                   <property name="text">
-                    <string>TextLabel</string>
-                   </property>
-                  </widget>
-                 </item>
-                 <item row="1" column="0">
-                  <widget class="QLabel" name="Main_Crop2">
-                   <property name="minimumSize">
-                    <size>
-                     <width>200</width>
-                     <height>100</height>
-                    </size>
-                   </property>
-                   <property name="maximumSize">
-                    <size>
-                     <width>600</width>
-                     <height>400</height>
-                    </size>
-                   </property>
-                   <property name="text">
-                    <string>TextLabel</string>
-                   </property>
-                  </widget>
-                 </item>
-                 <item row="1" column="1">
-                  <widget class="QLabel" name="Main_Crop7">
-                   <property name="minimumSize">
-                    <size>
-                     <width>200</width>
-                     <height>100</height>
-                    </size>
-                   </property>
-                   <property name="maximumSize">
-                    <size>
-                     <width>600</width>
-                     <height>400</height>
-                    </size>
-                   </property>
-                   <property name="text">
-                    <string>TextLabel</string>
-                   </property>
-                  </widget>
-                 </item>
-                 <item row="2" column="0">
-                  <widget class="QLabel" name="Main_Crop3">
-                   <property name="minimumSize">
-                    <size>
-                     <width>200</width>
-                     <height>100</height>
-                    </size>
-                   </property>
-                   <property name="maximumSize">
-                    <size>
-                     <width>600</width>
-                     <height>400</height>
-                    </size>
-                   </property>
-                   <property name="text">
-                    <string>TextLabel</string>
-                   </property>
-                  </widget>
-                 </item>
-                 <item row="2" column="1">
-                  <widget class="QLabel" name="Main_Crop8">
-                   <property name="minimumSize">
-                    <size>
-                     <width>200</width>
-                     <height>100</height>
-                    </size>
-                   </property>
-                   <property name="maximumSize">
-                    <size>
-                     <width>600</width>
-                     <height>400</height>
-                    </size>
-                   </property>
-                   <property name="text">
-                    <string>TextLabel</string>
-                   </property>
-                  </widget>
-                 </item>
-                 <item row="3" column="0">
-                  <widget class="QLabel" name="Main_Crop4">
-                   <property name="minimumSize">
-                    <size>
-                     <width>200</width>
-                     <height>100</height>
-                    </size>
-                   </property>
-                   <property name="maximumSize">
-                    <size>
-                     <width>600</width>
-                     <height>400</height>
-                    </size>
-                   </property>
-                   <property name="text">
-                    <string>TextLabel</string>
-                   </property>
-                  </widget>
-                 </item>
-                 <item row="3" column="1">
-                  <widget class="QLabel" name="Main_Crop9">
-                   <property name="minimumSize">
-                    <size>
-                     <width>200</width>
-                     <height>100</height>
-                    </size>
-                   </property>
-                   <property name="maximumSize">
-                    <size>
-                     <width>600</width>
-                     <height>400</height>
-                    </size>
-                   </property>
-                   <property name="text">
-                    <string>TextLabel</string>
-                   </property>
-                  </widget>
-                 </item>
-                 <item row="4" column="0">
-                  <widget class="QLabel" name="Main_Crop5">
-                   <property name="minimumSize">
-                    <size>
-                     <width>200</width>
-                     <height>100</height>
-                    </size>
-                   </property>
-                   <property name="maximumSize">
-                    <size>
-                     <width>600</width>
-                     <height>400</height>
-                    </size>
-                   </property>
-                   <property name="text">
-                    <string>TextLabel</string>
-                   </property>
-                  </widget>
-                 </item>
-                 <item row="4" column="1">
-                  <widget class="QLabel" name="Main_Crop10">
-                   <property name="minimumSize">
-                    <size>
-                     <width>200</width>
-                     <height>100</height>
-                    </size>
-                   </property>
-                   <property name="maximumSize">
-                    <size>
-                     <width>600</width>
-                     <height>400</height>
-                    </size>
-                   </property>
-                   <property name="text">
-                    <string>TextLabel</string>
                    </property>
                   </widget>
                  </item>
@@ -740,6 +507,12 @@ QPushButton:focus {
               </item>
               <item row="0" column="1">
                <widget class="QFrame" name="frame_11">
+                <property name="maximumSize">
+                 <size>
+                  <width>16777215</width>
+                  <height>80</height>
+                 </size>
+                </property>
                 <property name="styleSheet">
                  <string notr="true">border:0px solid;</string>
                 </property>
@@ -750,7 +523,7 @@ QPushButton:focus {
                  <enum>QFrame::Raised</enum>
                 </property>
                 <layout class="QGridLayout" name="gridLayout_3">
-                 <item row="0" column="0" alignment="Qt::AlignHCenter">
+                 <item row="0" column="0" alignment="Qt::AlignLeft">
                   <widget class="QFrame" name="frame_12">
                    <property name="frameShape">
                     <enum>QFrame::StyledPanel</enum>
@@ -789,6 +562,513 @@ QPushButton:focus {
                    </layout>
                   </widget>
                  </item>
+                 <item row="0" column="2" alignment="Qt::AlignRight">
+                  <widget class="QPushButton" name="Leave">
+                   <property name="minimumSize">
+                    <size>
+                     <width>80</width>
+                     <height>40</height>
+                    </size>
+                   </property>
+                   <property name="maximumSize">
+                    <size>
+                     <width>16777215</width>
+                     <height>50</height>
+                    </size>
+                   </property>
+                   <property name="cursor">
+                    <cursorShape>PointingHandCursor</cursorShape>
+                   </property>
+                   <property name="styleSheet">
+                    <string notr="true">QPushButton:hover,
+QPushButton:focus {
+  background-color: #ea0101;
+  border: 3px solid #9ac3fe;
+}</string>
+                   </property>
+                   <property name="text">
+                    <string>X</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="0" column="1">
+                  <widget class="QFrame" name="frame_13">
+                   <property name="frameShape">
+                    <enum>QFrame::StyledPanel</enum>
+                   </property>
+                   <property name="frameShadow">
+                    <enum>QFrame::Raised</enum>
+                   </property>
+                   <layout class="QHBoxLayout" name="horizontalLayout_3">
+                    <item>
+                     <widget class="QLabel" name="label_6">
+                      <property name="font">
+                       <font>
+                        <pointsize>16</pointsize>
+                       </font>
+                      </property>
+                      <property name="text">
+                       <string>包裝SN : </string>
+                      </property>
+                     </widget>
+                    </item>
+                    <item>
+                     <widget class="QLineEdit" name="Main_Prod_SN">
+                      <property name="font">
+                       <font>
+                        <pointsize>16</pointsize>
+                       </font>
+                      </property>
+                      <property name="styleSheet">
+                       <string notr="true">border:1px solid;</string>
+                      </property>
+                     </widget>
+                    </item>
+                   </layout>
+                  </widget>
+                 </item>
+                </layout>
+               </widget>
+              </item>
+              <item row="1" column="1" alignment="Qt::AlignHCenter|Qt::AlignTop">
+               <widget class="QFrame" name="frame_2">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <property name="minimumSize">
+                 <size>
+                  <width>500</width>
+                  <height>100</height>
+                 </size>
+                </property>
+                <property name="maximumSize">
+                 <size>
+                  <width>800</width>
+                  <height>800</height>
+                 </size>
+                </property>
+                <property name="font">
+                 <font>
+                  <stylestrategy>PreferDefault</stylestrategy>
+                 </font>
+                </property>
+                <property name="layoutDirection">
+                 <enum>Qt::LeftToRight</enum>
+                </property>
+                <property name="autoFillBackground">
+                 <bool>false</bool>
+                </property>
+                <property name="frameShape">
+                 <enum>QFrame::StyledPanel</enum>
+                </property>
+                <property name="frameShadow">
+                 <enum>QFrame::Raised</enum>
+                </property>
+                <layout class="QVBoxLayout" name="verticalLayout">
+                 <item alignment="Qt::AlignHCenter">
+                  <widget class="QFrame" name="frame_14">
+                   <property name="frameShape">
+                    <enum>QFrame::StyledPanel</enum>
+                   </property>
+                   <property name="frameShadow">
+                    <enum>QFrame::Raised</enum>
+                   </property>
+                   <layout class="QHBoxLayout" name="horizontalLayout_6">
+                    <property name="leftMargin">
+                     <number>0</number>
+                    </property>
+                    <property name="topMargin">
+                     <number>0</number>
+                    </property>
+                    <property name="rightMargin">
+                     <number>0</number>
+                    </property>
+                    <property name="bottomMargin">
+                     <number>0</number>
+                    </property>
+                    <item>
+                     <widget class="QLabel" name="Main_Crop1">
+                      <property name="minimumSize">
+                       <size>
+                        <width>200</width>
+                        <height>100</height>
+                       </size>
+                      </property>
+                      <property name="maximumSize">
+                       <size>
+                        <width>192</width>
+                        <height>144</height>
+                       </size>
+                      </property>
+                      <property name="font">
+                       <font>
+                        <family>Adobe 黑体 Std R</family>
+                        <pointsize>20</pointsize>
+                        <stylestrategy>PreferDefault</stylestrategy>
+                       </font>
+                      </property>
+                      <property name="text">
+                       <string>1</string>
+                      </property>
+                      <property name="alignment">
+                       <set>Qt::AlignCenter</set>
+                      </property>
+                     </widget>
+                    </item>
+                    <item>
+                     <widget class="QLabel" name="Main_Crop6">
+                      <property name="minimumSize">
+                       <size>
+                        <width>200</width>
+                        <height>100</height>
+                       </size>
+                      </property>
+                      <property name="maximumSize">
+                       <size>
+                        <width>192</width>
+                        <height>144</height>
+                       </size>
+                      </property>
+                      <property name="font">
+                       <font>
+                        <family>Adobe 黑体 Std R</family>
+                        <pointsize>20</pointsize>
+                       </font>
+                      </property>
+                      <property name="text">
+                       <string>6</string>
+                      </property>
+                      <property name="alignment">
+                       <set>Qt::AlignCenter</set>
+                      </property>
+                     </widget>
+                    </item>
+                   </layout>
+                  </widget>
+                 </item>
+                 <item alignment="Qt::AlignHCenter">
+                  <widget class="QFrame" name="frame_15">
+                   <property name="frameShape">
+                    <enum>QFrame::StyledPanel</enum>
+                   </property>
+                   <property name="frameShadow">
+                    <enum>QFrame::Raised</enum>
+                   </property>
+                   <layout class="QHBoxLayout" name="horizontalLayout_8">
+                    <property name="leftMargin">
+                     <number>0</number>
+                    </property>
+                    <property name="topMargin">
+                     <number>0</number>
+                    </property>
+                    <property name="rightMargin">
+                     <number>0</number>
+                    </property>
+                    <property name="bottomMargin">
+                     <number>0</number>
+                    </property>
+                    <item>
+                     <widget class="QLabel" name="Main_Crop2">
+                      <property name="minimumSize">
+                       <size>
+                        <width>200</width>
+                        <height>100</height>
+                       </size>
+                      </property>
+                      <property name="maximumSize">
+                       <size>
+                        <width>192</width>
+                        <height>144</height>
+                       </size>
+                      </property>
+                      <property name="font">
+                       <font>
+                        <family>Adobe 黑体 Std R</family>
+                        <pointsize>20</pointsize>
+                       </font>
+                      </property>
+                      <property name="text">
+                       <string>2</string>
+                      </property>
+                      <property name="alignment">
+                       <set>Qt::AlignCenter</set>
+                      </property>
+                     </widget>
+                    </item>
+                    <item>
+                     <widget class="QLabel" name="Main_Crop7">
+                      <property name="minimumSize">
+                       <size>
+                        <width>200</width>
+                        <height>100</height>
+                       </size>
+                      </property>
+                      <property name="maximumSize">
+                       <size>
+                        <width>192</width>
+                        <height>144</height>
+                       </size>
+                      </property>
+                      <property name="font">
+                       <font>
+                        <family>Adobe 黑体 Std R</family>
+                        <pointsize>20</pointsize>
+                       </font>
+                      </property>
+                      <property name="text">
+                       <string>7</string>
+                      </property>
+                      <property name="alignment">
+                       <set>Qt::AlignCenter</set>
+                      </property>
+                     </widget>
+                    </item>
+                   </layout>
+                  </widget>
+                 </item>
+                 <item alignment="Qt::AlignHCenter">
+                  <widget class="QFrame" name="frame_16">
+                   <property name="frameShape">
+                    <enum>QFrame::StyledPanel</enum>
+                   </property>
+                   <property name="frameShadow">
+                    <enum>QFrame::Raised</enum>
+                   </property>
+                   <layout class="QHBoxLayout" name="horizontalLayout_9">
+                    <property name="leftMargin">
+                     <number>0</number>
+                    </property>
+                    <property name="topMargin">
+                     <number>0</number>
+                    </property>
+                    <property name="rightMargin">
+                     <number>0</number>
+                    </property>
+                    <property name="bottomMargin">
+                     <number>0</number>
+                    </property>
+                    <item>
+                     <widget class="QLabel" name="Main_Crop3">
+                      <property name="minimumSize">
+                       <size>
+                        <width>200</width>
+                        <height>100</height>
+                       </size>
+                      </property>
+                      <property name="maximumSize">
+                       <size>
+                        <width>192</width>
+                        <height>144</height>
+                       </size>
+                      </property>
+                      <property name="font">
+                       <font>
+                        <family>Adobe 黑体 Std R</family>
+                        <pointsize>20</pointsize>
+                       </font>
+                      </property>
+                      <property name="text">
+                       <string>3</string>
+                      </property>
+                      <property name="alignment">
+                       <set>Qt::AlignCenter</set>
+                      </property>
+                     </widget>
+                    </item>
+                    <item>
+                     <widget class="QLabel" name="Main_Crop8">
+                      <property name="minimumSize">
+                       <size>
+                        <width>200</width>
+                        <height>100</height>
+                       </size>
+                      </property>
+                      <property name="maximumSize">
+                       <size>
+                        <width>192</width>
+                        <height>144</height>
+                       </size>
+                      </property>
+                      <property name="font">
+                       <font>
+                        <family>Adobe 黑体 Std R</family>
+                        <pointsize>20</pointsize>
+                       </font>
+                      </property>
+                      <property name="text">
+                       <string>8</string>
+                      </property>
+                      <property name="alignment">
+                       <set>Qt::AlignCenter</set>
+                      </property>
+                     </widget>
+                    </item>
+                   </layout>
+                  </widget>
+                 </item>
+                 <item alignment="Qt::AlignHCenter">
+                  <widget class="QFrame" name="frame_17">
+                   <property name="frameShape">
+                    <enum>QFrame::StyledPanel</enum>
+                   </property>
+                   <property name="frameShadow">
+                    <enum>QFrame::Raised</enum>
+                   </property>
+                   <layout class="QHBoxLayout" name="horizontalLayout_10">
+                    <property name="leftMargin">
+                     <number>0</number>
+                    </property>
+                    <property name="topMargin">
+                     <number>0</number>
+                    </property>
+                    <property name="rightMargin">
+                     <number>0</number>
+                    </property>
+                    <property name="bottomMargin">
+                     <number>0</number>
+                    </property>
+                    <item>
+                     <widget class="QLabel" name="Main_Crop4">
+                      <property name="minimumSize">
+                       <size>
+                        <width>200</width>
+                        <height>100</height>
+                       </size>
+                      </property>
+                      <property name="maximumSize">
+                       <size>
+                        <width>192</width>
+                        <height>144</height>
+                       </size>
+                      </property>
+                      <property name="font">
+                       <font>
+                        <family>Adobe 黑体 Std R</family>
+                        <pointsize>20</pointsize>
+                       </font>
+                      </property>
+                      <property name="text">
+                       <string>4</string>
+                      </property>
+                      <property name="alignment">
+                       <set>Qt::AlignCenter</set>
+                      </property>
+                     </widget>
+                    </item>
+                    <item>
+                     <widget class="QLabel" name="Main_Crop9">
+                      <property name="minimumSize">
+                       <size>
+                        <width>200</width>
+                        <height>100</height>
+                       </size>
+                      </property>
+                      <property name="maximumSize">
+                       <size>
+                        <width>192</width>
+                        <height>144</height>
+                       </size>
+                      </property>
+                      <property name="font">
+                       <font>
+                        <family>Adobe 黑体 Std R</family>
+                        <pointsize>20</pointsize>
+                       </font>
+                      </property>
+                      <property name="text">
+                       <string>9</string>
+                      </property>
+                      <property name="alignment">
+                       <set>Qt::AlignCenter</set>
+                      </property>
+                     </widget>
+                    </item>
+                   </layout>
+                  </widget>
+                 </item>
+                 <item alignment="Qt::AlignHCenter">
+                  <widget class="QFrame" name="frame_18">
+                   <property name="frameShape">
+                    <enum>QFrame::StyledPanel</enum>
+                   </property>
+                   <property name="frameShadow">
+                    <enum>QFrame::Raised</enum>
+                   </property>
+                   <layout class="QHBoxLayout" name="horizontalLayout_11">
+                    <property name="leftMargin">
+                     <number>0</number>
+                    </property>
+                    <property name="topMargin">
+                     <number>0</number>
+                    </property>
+                    <property name="rightMargin">
+                     <number>0</number>
+                    </property>
+                    <property name="bottomMargin">
+                     <number>0</number>
+                    </property>
+                    <item alignment="Qt::AlignHCenter">
+                     <widget class="QLabel" name="Main_Crop5">
+                      <property name="minimumSize">
+                       <size>
+                        <width>200</width>
+                        <height>100</height>
+                       </size>
+                      </property>
+                      <property name="maximumSize">
+                       <size>
+                        <width>192</width>
+                        <height>144</height>
+                       </size>
+                      </property>
+                      <property name="font">
+                       <font>
+                        <family>Adobe 黑体 Std R</family>
+                        <pointsize>20</pointsize>
+                       </font>
+                      </property>
+                      <property name="text">
+                       <string>5</string>
+                      </property>
+                      <property name="alignment">
+                       <set>Qt::AlignCenter</set>
+                      </property>
+                     </widget>
+                    </item>
+                    <item alignment="Qt::AlignHCenter">
+                     <widget class="QLabel" name="Main_Crop10">
+                      <property name="minimumSize">
+                       <size>
+                        <width>200</width>
+                        <height>100</height>
+                       </size>
+                      </property>
+                      <property name="maximumSize">
+                       <size>
+                        <width>192</width>
+                        <height>144</height>
+                       </size>
+                      </property>
+                      <property name="font">
+                       <font>
+                        <family>Adobe 黑体 Std R</family>
+                        <pointsize>20</pointsize>
+                       </font>
+                      </property>
+                      <property name="text">
+                       <string>10</string>
+                      </property>
+                      <property name="alignment">
+                       <set>Qt::AlignCenter</set>
+                      </property>
+                     </widget>
+                    </item>
+                   </layout>
+                  </widget>
+                 </item>
                 </layout>
                </widget>
               </item>
@@ -815,58 +1095,147 @@ QPushButton:focus {
           </property>
           <layout class="QHBoxLayout" name="horizontalLayout">
            <item>
-            <widget class="QTableWidget" name="tableWidget">
-             <property name="minimumSize">
-              <size>
-               <width>700</width>
-               <height>0</height>
-              </size>
-             </property>
-             <property name="maximumSize">
-              <size>
-               <width>700</width>
-               <height>16777215</height>
-              </size>
-             </property>
+            <widget class="QStackedWidget" name="Setting_Table_Area">
              <property name="font">
               <font>
-               <pointsize>12</pointsize>
+               <family>Microsoft JhengHei UI</family>
               </font>
              </property>
-             <attribute name="horizontalHeaderCascadingSectionResizes">
-              <bool>false</bool>
-             </attribute>
-             <attribute name="horizontalHeaderStretchLastSection">
-              <bool>true</bool>
-             </attribute>
-             <attribute name="verticalHeaderStretchLastSection">
-              <bool>false</bool>
-             </attribute>
-             <column>
-              <property name="text">
-               <string>Product</string>
-              </property>
-             </column>
-             <column>
-              <property name="text">
-               <string>Product_ID</string>
-              </property>
-             </column>
-             <column>
-              <property name="text">
-               <string>ZoneCount</string>
-              </property>
-             </column>
-             <column>
-              <property name="text">
-               <string>Position</string>
-              </property>
-             </column>
-             <column>
-              <property name="text">
-               <string>Setup_time</string>
-              </property>
-             </column>
+             <property name="currentIndex">
+              <number>0</number>
+             </property>
+             <widget class="QWidget" name="page_3">
+              <layout class="QHBoxLayout" name="horizontalLayout_13">
+               <item>
+                <widget class="QTableWidget" name="tableWidget">
+                 <property name="minimumSize">
+                  <size>
+                   <width>700</width>
+                   <height>0</height>
+                  </size>
+                 </property>
+                 <property name="maximumSize">
+                  <size>
+                   <width>800</width>
+                   <height>16777215</height>
+                  </size>
+                 </property>
+                 <property name="font">
+                  <font>
+                   <pointsize>12</pointsize>
+                  </font>
+                 </property>
+                 <attribute name="horizontalHeaderCascadingSectionResizes">
+                  <bool>false</bool>
+                 </attribute>
+                 <attribute name="horizontalHeaderStretchLastSection">
+                  <bool>true</bool>
+                 </attribute>
+                 <attribute name="verticalHeaderStretchLastSection">
+                  <bool>false</bool>
+                 </attribute>
+                 <column>
+                  <property name="text">
+                   <string>Product</string>
+                  </property>
+                 </column>
+                 <column>
+                  <property name="text">
+                   <string>Product_ID</string>
+                  </property>
+                 </column>
+                 <column>
+                  <property name="text">
+                   <string>ZoneCount</string>
+                  </property>
+                 </column>
+                 <column>
+                  <property name="text">
+                   <string>Position</string>
+                  </property>
+                 </column>
+                 <column>
+                  <property name="text">
+                   <string>Setup_time</string>
+                  </property>
+                 </column>
+                </widget>
+               </item>
+              </layout>
+             </widget>
+             <widget class="QWidget" name="page_4">
+              <layout class="QVBoxLayout" name="verticalLayout_5">
+               <item>
+                <widget class="QTableWidget" name="tableWidget2">
+                 <property name="maximumSize">
+                  <size>
+                   <width>800</width>
+                   <height>16777215</height>
+                  </size>
+                 </property>
+                 <property name="font">
+                  <font>
+                   <pointsize>12</pointsize>
+                  </font>
+                 </property>
+                 <property name="autoFillBackground">
+                  <bool>false</bool>
+                 </property>
+                 <attribute name="horizontalHeaderStretchLastSection">
+                  <bool>true</bool>
+                 </attribute>
+                 <column>
+                  <property name="text">
+                   <string>Order</string>
+                  </property>
+                 </column>
+                 <column>
+                  <property name="text">
+                   <string>Position</string>
+                  </property>
+                 </column>
+                </widget>
+               </item>
+               <item>
+                <widget class="QFrame" name="frame_19">
+                 <property name="frameShape">
+                  <enum>QFrame::StyledPanel</enum>
+                 </property>
+                 <property name="frameShadow">
+                  <enum>QFrame::Raised</enum>
+                 </property>
+                 <layout class="QHBoxLayout" name="horizontalLayout_12">
+                  <item alignment="Qt::AlignHCenter">
+                   <widget class="QPushButton" name="Setting_Save">
+                    <property name="minimumSize">
+                     <size>
+                      <width>200</width>
+                      <height>40</height>
+                     </size>
+                    </property>
+                    <property name="text">
+                     <string>保存</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item alignment="Qt::AlignHCenter">
+                   <widget class="QPushButton" name="Setting_Back_Save">
+                    <property name="minimumSize">
+                     <size>
+                      <width>200</width>
+                      <height>40</height>
+                     </size>
+                    </property>
+                    <property name="text">
+                     <string>退出</string>
+                    </property>
+                   </widget>
+                  </item>
+                 </layout>
+                </widget>
+               </item>
+              </layout>
+             </widget>
             </widget>
            </item>
            <item>
@@ -949,7 +1318,13 @@ QPushButton:focus {
                          <number>0</number>
                         </property>
                         <item>
-                         <widget class="QPushButton" name="Build_Data">
+                         <widget class="QPushButton" name="Setting_Build_Data">
+                          <property name="minimumSize">
+                           <size>
+                            <width>0</width>
+                            <height>40</height>
+                           </size>
+                          </property>
                           <property name="font">
                            <font>
                             <pointsize>-1</pointsize>
@@ -969,7 +1344,7 @@ QPushButton:focus {
                       </widget>
                      </item>
                      <item>
-                      <widget class="QLabel" name="Setup_img">
+                      <widget class="QLabel" name="Setting_Setup_img">
                        <property name="minimumSize">
                         <size>
                          <width>800</width>
@@ -1062,7 +1437,7 @@ QPushButton:focus {
                          </widget>
                         </item>
                         <item row="0" column="1">
-                         <widget class="QLineEdit" name="prod_name">
+                         <widget class="QLineEdit" name="Setting_prod_name">
                           <property name="maximumSize">
                            <size>
                             <width>16777215</width>
@@ -1104,7 +1479,7 @@ QPushButton:focus {
                          </widget>
                         </item>
                         <item row="1" column="1">
-                         <widget class="QLineEdit" name="prod_id">
+                         <widget class="QLineEdit" name="Setting_prod_id">
                           <property name="maximumSize">
                            <size>
                             <width>16777215</width>
@@ -1125,7 +1500,7 @@ QPushButton:focus {
                          </widget>
                         </item>
                         <item row="4" column="1">
-                         <widget class="QPushButton" name="archiving">
+                         <widget class="QPushButton" name="Setting_archiving">
                           <property name="minimumSize">
                            <size>
                             <width>0</width>
@@ -1144,7 +1519,7 @@ QPushButton:focus {
                          </widget>
                         </item>
                         <item row="3" column="1">
-                         <widget class="QLineEdit" name="prod_area">
+                         <widget class="QLineEdit" name="Setting_prod_area">
                           <property name="font">
                            <font>
                             <pointsize>14</pointsize>
@@ -1183,7 +1558,7 @@ QPushButton:focus {
                       </widget>
                      </item>
                      <item alignment="Qt::AlignTop">
-                      <widget class="QPushButton" name="BackSetup">
+                      <widget class="QPushButton" name="Setting_BackSetup">
                        <property name="layoutDirection">
                         <enum>Qt::RightToLeft</enum>
                        </property>
@@ -1217,7 +1592,7 @@ QPushButton:focus {
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1826</width>
+     <width>1931</width>
      <height>21</height>
     </rect>
    </property>

@@ -136,6 +136,55 @@ def get_four_points_by_check_len(im,imglen,prodID):
         cv2.waitKey(0)
     return point_list
 
+def mouse_handler_for_edit(event, x, y, flags, data):
+    if event == cv2.EVENT_LBUTTONDOWN:
+        cv2.circle(data['im'], (x, y), 3, (0, 0, 255), 5, 16);
+        cv2.imshow("Setting Point", data['im']);
+
+        if len(data['points']) < 4:
+
+            data['points'].append([int(x), int(y)])
+            if data["points"] != []:
+
+                draw_rect = np.array(data["points"]).astype(int)
+                print(draw_rect[0])
+                # rect_points = [(draw_rect[0][0], draw_rect[0][1]),
+                #                (draw_rect[1][0], draw_rect[1][1]),
+                #                (draw_rect[2][0], draw_rect[2][1]),
+                #                (draw_rect[3][0], draw_rect[3][1])]
+                # for pts in range(len(rect_points)):
+                #     cv2.circle(data['im'], (int(rect_points[pts][0]), int(rect_points[pts][1])), 3, (0, 0, 255), 5,
+                #                16)
+                #     cv2.putText(data['im'], str(pts + 1), (int(rect_points[pts][0]), int(rect_points[pts][1]) - 10),
+                #                 cv2.FONT_HERSHEY_SIMPLEX,
+                #                 1, (0, 100, 255), 1, cv2.LINE_AA)
+                #
+                # center_x = int(sum(x for x, y in rect_points) / len(rect_points))
+                # center_y = int(sum(y for x, y in rect_points) / len(rect_points))
+                # cv2.polylines(data['im'], [draw_rect.reshape((-1, 1, 2))], True, (0, 255, 0), 3)  # 矩形中心
+                # cv2.putText(data['im'], str(b + 1), (center_x, center_y), cv2.FONT_HERSHEY_SIMPLEX,
+                #             1, (255, 100, 100), 3, cv2.LINE_AA)
+            cv2.putText(data['im'], str(len(data['points'])), (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX,
+                        1, (0, 100, 255), 1, cv2.LINE_AA)
+        cv2.circle(data['im'], (x, y), 3, (0, 0, 255), 5, 16);
+        cv2.imshow("Setting Point", data['im'])
+        if len(data['points']) == 4:
+            cv2.destroyWindow('Setting Point')
+
+def get_four_points_by_edit(im):
+    data = {}
+    data['im'] = im.copy()
+    data['points'] = []
+
+    # Set the callback function for any mouse event
+    cv2.imshow("Setting Point", im)
+    cv2.setMouseCallback("Setting Point", mouse_handler_for_edit, data)
+    cv2.waitKey(0)
+
+    # Convert array to np.array
+    points = np.vstack(data['points']).astype(float)
+    return points
+
 
 def text(img, str, x, y, size, color):
     pil = Image.fromarray(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
