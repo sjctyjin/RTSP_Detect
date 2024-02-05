@@ -54,6 +54,7 @@ class PyQt_MVC_Main(QMainWindow):
         self.check_box_count = 0#計算box數量
         self.check_box_num = []#box數量累積計算
         self.check_json_load = []#確認json是否載入
+        self.check_CAM_State = 0#確認相機是否成功開啟，若發生斷線問題，則為1
         self.Main_img = [self.ui.Main_Crop1,self.ui.Main_Crop2,self.ui.Main_Crop3,self.ui.Main_Crop4,self.ui.Main_Crop5,self.ui.Main_Crop6,self.ui.Main_Crop7,self.ui.Main_Crop8,self.ui.Main_Crop9,self.ui.Main_Crop10] #初始化小視窗label
         self.timer = QtCore.QTimer(self)
         self.timer.timeout.connect(self.update_time)
@@ -91,6 +92,8 @@ class PyQt_MVC_Main(QMainWindow):
         # self.setWindowFlags(QtCore.Qt.Window | QtCore.Qt.FramelessWindowHint)
 
     def Cam_flow(self,cap_result):
+        check_no_frame_times = 0
+
         while self.Main_Set[0]:
             # 查看消耗資源
             process = psutil.Process()
@@ -106,25 +109,34 @@ class PyQt_MVC_Main(QMainWindow):
             #                f"偵測時間 : {time.strftime('%Y-%m-%d %H:%M:%S')}\n"
             #                f"=============================================================\n")
             cam_ip = self.camIP
-            print(cam_ip)
             if cam_ip.isdigit():
                 cam_ip = int(cam_ip)
             try:
                 print("測試",cam_ip)
                 cap = cv2.VideoCapture(cam_ip)  # 設定攝影機鏡頭
                 cap_result.append(cap)
-
+                self.check_CAM_State = 0  # 重置相機狀態
                 if not cap.isOpened():
-                    print("無法開啟相機")
+                    print("無法開啟相機--118")
+                    self.check_CAM_State = 1
                     break
                 while self.Reset_Frame_var[0]:
-                    print('讀取中')
+                    # print('讀取中')
                     ret, frame = cap.read()  # 讀取攝影機畫面
-                    # self.Cam_Flow_Receive = frame
                     if ret:
+
                         self.Cam_Flow_Receive = frame
                     else:
                         print("沒影像")
+                        check_no_frame_times += 1
+                        if check_no_frame_times >= 1000:
+                            print("重置")
+                            check_no_frame_times = 0
+                            self.check_CAM_State = 1
+                            self.ui.Main_Connected.setText("重新連線")
+                            self.Main_Set[0] = False
+                            #=======================
+                            break
             except:
                 print("讀取錯誤")
 
@@ -456,6 +468,7 @@ class PyQt_MVC_Main(QMainWindow):
                                f"偵測時間 : {time.strftime('%Y-%m-%d %H:%M:%S')}\n"
                                f"=============================================================\n")
                 self.Empty_Frame_Timer = 0
+                PyQt_MVC_Main.Frame_reset(self)
             #     self.Empty_Frame_Timer = 0
             #     self.Reset_Frame_var[0] = False
             #     time.sleep(1)
@@ -520,7 +533,7 @@ class PyQt_MVC_Main(QMainWindow):
         cap_thread.join(timeout=4)
         # # 檢查是否成功開啟相機
         if not cap_result or not cap_result[0].isOpened():
-            print("無法開啟相機")
+            print("無法開啟相機--543")
             msg_box = QMessageBox(QMessageBox.Warning, '提示', '相機無法啟動，請重新連線')
             msg_box.resize(400, 200)
             msg_box.exec_()
@@ -541,7 +554,19 @@ class PyQt_MVC_Main(QMainWindow):
             print("click 1")
             print("測試", self.Main_img[0])
             # self.Reset_Frame_var[0] = False
-
+    def Warring_Message(self,text=None):
+        # msg_box = QMessageBox(QMessageBox.Warning, '提示', '相機無法啟動，請重新連線')
+        # msg_box.resize(400, 200)
+        # msg_box.exec_()
+        msg_box = QMessageBox()
+        if text == None:
+            text = "相機無法啟動，請重新連線"
+        msg_box.setIcon(QMessageBox.Information)  # 設置圖標類型為信息圖標
+        msg_box.setWindowTitle('操作提示')  # 設置對話框標題
+        msg_box.setText(text)  # 設置顯示的文本信息
+        msg_box.setStandardButtons(QMessageBox.Ok)  # 只添加一個"確定"按鈕
+        msg_box.resize(400, 200)
+        msg_box.exec_()
     def finger_detect(self):
         if self.check_finger_switch == 0:
             self.check_finger_switch = 1
@@ -596,6 +621,8 @@ class PyQt_MVC_Main(QMainWindow):
 
 
     def Frame_reset(self):
+        self.Reset_Frame_var[0] = False
+        time.sleep(1)
         self.Reset_Frame_var[0] = True
         self.Set_CVZone = 1
         # threading.Thread(target=PyQt_MVC_Main.cam, args=(self,)).start()
@@ -606,7 +633,9 @@ class PyQt_MVC_Main(QMainWindow):
         self.ui.stackedWidget.setCurrentIndex(0)
         print(self.ui.Setting_Setup_img.text())
     def Connection(self):
-
+        print("按下")
+        self.ui.Main_Connected.setText("連線")
+        self.Main_Set[0] = True
         self.camIP = self.ui.Main_Cam_IP.text()
         cap_result = []
         cap_thread = threading.Thread(target=PyQt_MVC_Main.Cam_flow, args=(self,cap_result))
@@ -617,10 +646,11 @@ class PyQt_MVC_Main(QMainWindow):
         cap_thread.join(timeout=4)
         # 檢查是否成功開啟相機
         if not cap_result or not cap_result[0].isOpened():
-            print("無法開啟相機")
+            print("無法開啟相機--644")
             msg_box = QMessageBox(QMessageBox.Warning, '提示', '相機無法啟動，請重新連線')
             msg_box.resize(400, 200)
             msg_box.exec_()
+            self.ui.Main_Connected.setText("重新連線")
         else:
             print("相機成功開啟")
 
@@ -829,7 +859,9 @@ class PyQt_MVC_Main(QMainWindow):
 
         with open("data.json", "w") as json_file:
             json.dump(data_to_record, json_file)
-
+        if self.check_CAM_State == 1 :
+            self.check_CAM_State = 0
+            PyQt_MVC_Main.Warring_Message(self,"影像中斷、請重新連線")
     """
         Tabel資料表處理
     """
