@@ -46,6 +46,7 @@ class PyQt_MVC_Main(QMainWindow):
         self.Current_Prodict_ID = "" #當前主頁面的產品ID
         self.check_finger_switch = 0 #設定手指檢測
         self.Reset_Frame_var = [True] #Reset button
+        self.Main_Set = [True] #主視窗是否關閉
         self.Empty_Frame_Timer = 0 #判斷空值次數
         self.Cam_Flow_Receive = []#RTSP畫面接收
         self.ImaMatrix = []#主畫面接收
@@ -80,38 +81,44 @@ class PyQt_MVC_Main(QMainWindow):
         self.clickableLabelFilter = ClickableLabelEventFilter(self)
         self.clickableLabelFilter.clicked.connect(self.Setup_Zone)
         self.ui.Setting_Setup_img.installEventFilter(self.clickableLabelFilter)
-        self.linkEvent()
+
         # self.show()
         # 設置全屏
-
         self.showFullScreen()
+
+        self.linkEvent()
         # 設置無邊框窗口，隱藏任務欄
         # self.setWindowFlags(QtCore.Qt.Window | QtCore.Qt.FramelessWindowHint)
 
-    def Cam_flow(self):
-        while True:
+    def Cam_flow(self,cap_result):
+        while self.Main_Set[0]:
             # 查看消耗資源
             process = psutil.Process()
             memory_info = process.memory_info()
-            print("偵測 : -", time.strftime('%Y-%m-%d %H:%M:%S'))
+            print("偵測相機調用時間 : -", time.strftime('%Y-%m-%d %H:%M:%S'))
             print(f"Virtual Memory Usage: {memory_info.vms / (1024 * 1024)} MB")
             print(f"Physical Memory Usage: {memory_info.rss / (1024 * 1024)} MB")
-            with open("event_log.txt", "a") as file:
-                # 写入事件紀錄，包括时间和描述
-                file.write(f"=============================================================\n"
-                           f"Virtual Memory Usage :{memory_info.vms / (1024 * 1024)}MB\n"
-                           f"Physical Memory Usage:{memory_info.rss / (1024 * 1024)}\n"
-                           f"偵測時間 : {time.strftime('%Y-%m-%d %H:%M:%S')}\n"
-                           f"=============================================================\n")
+            # with open("event_log.txt", "a") as file:
+            #     # 写入事件紀錄，包括时间和描述
+            #     file.write(f"=============================================================\n"
+            #                f"Virtual Memory Usage :{memory_info.vms / (1024 * 1024)}MB\n"
+            #                f"Physical Memory Usage:{memory_info.rss / (1024 * 1024)}\n"
+            #                f"偵測時間 : {time.strftime('%Y-%m-%d %H:%M:%S')}\n"
+            #                f"=============================================================\n")
             cam_ip = self.camIP
+            print(cam_ip)
             if cam_ip.isdigit():
                 cam_ip = int(cam_ip)
             try:
+                print("測試",cam_ip)
                 cap = cv2.VideoCapture(cam_ip)  # 設定攝影機鏡頭
+                cap_result.append(cap)
+
                 if not cap.isOpened():
-                    print("Cannot open camera")
+                    print("無法開啟相機")
                     break
                 while self.Reset_Frame_var[0]:
+                    print('讀取中')
                     ret, frame = cap.read()  # 讀取攝影機畫面
                     # self.Cam_Flow_Receive = frame
                     if ret:
@@ -124,7 +131,7 @@ class PyQt_MVC_Main(QMainWindow):
 
     def Cam_Display(self):
         box_alpha = 0.5
-        while True:
+        while self.Main_Set[0]:
             try:
                 # 加载手部检测函数
                 mpHands = mp.solutions.hands
@@ -377,8 +384,9 @@ class PyQt_MVC_Main(QMainWindow):
                                 print("列外事項-跳出內迴圈")
                                 break
                     else:
-                        print("no ret-",time.strftime("%Y-%m-%d %H:%M:%S"))
-                        print("等待圖像")
+                        pass
+                        # print("no ret-",time.strftime("%Y-%m-%d %H:%M:%S"))
+                        # print("等待圖像")
 
             except:
                 print("rerun")
@@ -432,7 +440,7 @@ class PyQt_MVC_Main(QMainWindow):
             except:
                 print(traceback.print_exc())
         else:
-            print("空值")
+            # print("空值")
             self.Empty_Frame_Timer += 1
             if self.Set_CVZone == 0 and self.Empty_Frame_Timer >= 50:
                 process = psutil.Process()
@@ -463,12 +471,11 @@ class PyQt_MVC_Main(QMainWindow):
         self.ui.Main_Cam_IP.setText(self.camIP)
         self.ui.Setting_BackSetup.pressed.connect(self.BackForm1)
         self.ui.Leave.clicked.connect(self.leave)
-        threading.Thread(target=PyQt_MVC_Main.Cam_flow, args=(self,)).start()
-        threading.Thread(target=PyQt_MVC_Main.Cam_Display, args=(self,)).start()
+        
         try:
             #避免沒有csv時發生錯誤
             df = pd.read_csv('Static/product_info.csv', header=None, names=['Product', 'Product_ID','ZoneCount','Setup_time', 'Position'])
-            print(df)
+            # print(df)
             self.insert_data(self.ui.tableWidget, df)#刷新csv資料
             for clr_mig in range(len(self.Main_img)):#Reset圖像區
                 self.Main_img[clr_mig].clear()
@@ -492,16 +499,33 @@ class PyQt_MVC_Main(QMainWindow):
         #tabWidget
         # self.ui.tabWidget.currentChanged.connect(self.tabChanged)
         self.ui.tabWidget.currentChanged['int'].connect(self.tabfun)  # 绑定标签点击时的信号与槽函数
-        with open("data.json", "r") as json_file:
-            data = json.load(json_file)
-        if data:
-            self.check_box_num = data["Package_check"]
-            self.ui.Main_Cam_IP.setText(data["CamIP"])
-            self.ui.Main_Prod_ID.setText(data["Product_ID"])
-            self.ui.Main_Prod_SN.setText(data["Product_SN"])
-            self.check_json_load = 1
-            # 打印读取的数据
-            print("Timestamp:", data["timestamp"])
+        try:
+            with open("data.json", "r") as json_file:
+                data = json.load(json_file)
+            if data:
+                self.check_box_num = data["Package_check"]
+                self.ui.Main_Cam_IP.setText(data["CamIP"])
+                self.ui.Main_Prod_ID.setText(data["Product_ID"])
+                self.ui.Main_Prod_SN.setText(data["Product_SN"])
+                self.check_json_load = 1
+                # 打印读取的数据
+                print("Timestamp:", data["timestamp"])
+        except:
+            print("no data")
+        cap_result = []
+        cap_thread = threading.Thread(target=PyQt_MVC_Main.Cam_flow, args=(self,cap_result))
+        display_thread = threading.Thread(target=PyQt_MVC_Main.Cam_Display, args=(self,))
+        cap_thread.start()
+        display_thread.start()
+        cap_thread.join(timeout=4)
+        # # 檢查是否成功開啟相機
+        if not cap_result or not cap_result[0].isOpened():
+            print("無法開啟相機")
+            msg_box = QMessageBox(QMessageBox.Warning, '提示', '相機無法啟動，請重新連線')
+            msg_box.resize(400, 200)
+            msg_box.exec_()
+        else:
+            print("相機成功開啟")
     #  自定义的槽函数
     def tabfun(self, index):
         print("tabfun click" + "  " + str(index))
@@ -525,7 +549,7 @@ class PyQt_MVC_Main(QMainWindow):
         else:
             self.check_finger_switch = 0
     def Prod_id_textcganger(self):
-        print(self.ui.Main_Prod_ID.text())
+        # print(self.ui.Main_Prod_ID.text())
         self.Current_Prodict_ID = self.ui.Main_Prod_ID.text()
     def Setup_Zone(self):
         print("設定")
@@ -560,7 +584,7 @@ class PyQt_MVC_Main(QMainWindow):
                 mdf["poition"] = point_array
                 print("格式",type(point_array[0]))
                 mdf = pd.DataFrame(mdf)
-                print(mdf)
+                # print(mdf)
                 # self.insert_data(self.ui.tableWidget2, mdf)  # 刷新csv資料
                 self.ui.tableWidget2.setRowCount(len(mdf["order"]))
                 for row_idx, row_data in mdf.iterrows():
@@ -574,7 +598,7 @@ class PyQt_MVC_Main(QMainWindow):
     def Frame_reset(self):
         self.Reset_Frame_var[0] = True
         self.Set_CVZone = 1
-        threading.Thread(target=PyQt_MVC_Main.cam, args=(self,)).start()
+        # threading.Thread(target=PyQt_MVC_Main.cam, args=(self,)).start()
 
     def BackForm2(self):
         self.ui.stackedWidget.setCurrentIndex(1)
@@ -582,10 +606,25 @@ class PyQt_MVC_Main(QMainWindow):
         self.ui.stackedWidget.setCurrentIndex(0)
         print(self.ui.Setting_Setup_img.text())
     def Connection(self):
+
         self.camIP = self.ui.Main_Cam_IP.text()
+        cap_result = []
+        cap_thread = threading.Thread(target=PyQt_MVC_Main.Cam_flow, args=(self,cap_result))
+        cap_thread.start()
         self.Reset_Frame_var[0] = False
         time.sleep(1)
         self.Reset_Frame_var[0] = True
+        cap_thread.join(timeout=4)
+        # 檢查是否成功開啟相機
+        if not cap_result or not cap_result[0].isOpened():
+            print("無法開啟相機")
+            msg_box = QMessageBox(QMessageBox.Warning, '提示', '相機無法啟動，請重新連線')
+            msg_box.resize(400, 200)
+            msg_box.exec_()
+        else:
+            print("相機成功開啟")
+
+
     def BuildData(self):
         prodname = self.ui.Setting_prod_name.text()
         prodID = self.ui.Setting_prod_id.text()
@@ -766,7 +805,10 @@ class PyQt_MVC_Main(QMainWindow):
         self.ui.Setting_Setup_img.setPixmap(prod_img)  # QLabel 顯示影像
         del prod_img
     def leave(self):
-        self.close()
+        self.Reset_Frame_var[0] = False
+        self.Main_Set[0] = False
+        time.sleep(1)
+        os._exit(1)
 
     def update_time(self):
         current_time = time.strftime("%Y-%m-%d %H:%M:%S")
