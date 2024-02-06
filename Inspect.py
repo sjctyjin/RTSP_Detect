@@ -181,27 +181,32 @@ class PyQt_MVC_Main(QMainWindow):
                                 # print("Set_ZoneCount : ",self.Set_ZoneCount)
                                 # frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)  # 轉換成 RGB
                                 if self.Set_ZoneCount != "":
-                                    point_lists = get_four_points_by_check_len(frame, int(self.Set_ZoneCount), self.Set_Prodict_ID)
+                                    # point_lists = get_four_points_by_check_len(frame, int(self.Set_ZoneCount), self.Set_Prodict_ID)
                                     # self.ZoneSetting.start(1000)
+                                    # threading.Thread(target=PyQt_MVC_Main.cam, args=(self,)).start()
+                                    threading.Thread(target=PyQt_MVC_Main.Four_Point_Getting, args=(self,)).start()
+
                                     # point_list = self.Four_Point_List
-                                    print("測試 : ", point_lists)
-                                    if point_lists != []:
-                                        df = pd.read_csv('Static/product_info.csv')  # 读取 CSV 文件
-                                        converted_arrays = [arr.astype(int).tolist() for arr in point_lists]
-                                        mask = df['Product_ID'] == self.Set_Prodict_ID
-                                        if mask.sum() == 1:  # 確保只有一行匹配
-                                            df.loc[mask, 'Position'] = [converted_arrays]
-                                        df.to_csv('Static/product_info.csv', index=False)
+                                    # print("測試 : ", point_lists)
+                                    # if point_lists != []:
+                                    #     df = pd.read_csv('Static/product_info.csv')  # 读取 CSV 文件
+                                    #     converted_arrays = [arr.astype(int).tolist() for arr in point_lists]
+                                    #     mask = df['Product_ID'] == self.Set_Prodict_ID
+                                    #     if mask.sum() == 1:  # 確保只有一行匹配
+                                    #         df.loc[mask, 'Position'] = [converted_arrays]
+                                    #     df.to_csv('Static/product_info.csv', index=False)
+                                    #     #清空選擇的資料
+                                    #     self.Set_ZoneCount = ""
+                                    #     self.Set_Prodict_ID = ""
+                                    #     # 刷新csv資料
+                                    #     self.insert_data(self.ui.tableWidget, df)
+                                    #     self.ui.Setting_prod_name.setText("")
+                                    #     self.ui.Setting_prod_id.setText("")
+                                    #     self.ui.Setting_prod_area.setText("")
+                                    #     self.ui.stackedWidget.setCurrentIndex(0)
 
                                 self.Set_CVZone = 0
-                                self.Set_ZoneCount = ""
-                                self.Set_Prodict_ID = ""
-                                # 刷新csv資料
-                                self.insert_data(self.ui.tableWidget, df)
-                                self.ui.Setting_prod_name.setText("")
-                                self.ui.Setting_prod_id.setText("")
-                                self.ui.Setting_prod_area.setText("")
-                                self.ui.stackedWidget.setCurrentIndex(0)
+
                             orig = frame.copy()
 
                             output_image = []
@@ -485,10 +490,61 @@ class PyQt_MVC_Main(QMainWindow):
             #     time.sleep(6)
             #     print("重置影像")
     def Four_Point_Getting(self):
-        self.Four_Point_List = get_four_points_by_check_len(frame, int(self.Set_ZoneCount),
-                                                  self.Set_Prodict_ID)
-
+        frame = cv2.flip(self.Cam_Flow_Receive, 1)
+        point_lists = get_four_points_by_check_len(frame , int(self.Set_ZoneCount),self.Set_Prodict_ID)
+        print("測試 : ", point_lists)
+        if point_lists != []:
+            df = pd.read_csv('Static/product_info.csv')  # 读取 CSV 文件
+            converted_arrays = [arr.astype(int).tolist() for arr in point_lists]
+            mask = df['Product_ID'] == self.Set_Prodict_ID
+            if mask.sum() == 1:  # 確保只有一行匹配
+                df.loc[mask, 'Position'] = [converted_arrays]
+            df.to_csv('Static/product_info.csv', index=False)
+            # 清空選擇的資料
+            self.Set_ZoneCount = ""
+            self.Set_Prodict_ID = ""
+            # 刷新csv資料
+            self.insert_data(self.ui.tableWidget, df)
+            self.ui.Setting_prod_name.setText("")
+            self.ui.Setting_prod_id.setText("")
+            self.ui.Setting_prod_area.setText("")
+            self.ui.stackedWidget.setCurrentIndex(0)
         self.ZoneSetting.stop()
+    def Edit_Four_Point(self,rowNum):
+        print("測試")
+        img = cv2.imread(f"Static/SetupArea/{self.Set_Prodict_ID}.jpg")
+        edit_point_list = get_four_points_by_edit(img)
+        print("測試 : ", edit_point_list)
+        if edit_point_list != []:
+            self.ui.tableWidget2.item(rowNum, 1).setText(str(edit_point_list.astype(int).tolist()))  # 待修正格式
+            img = cv2.imread(f"Static/SetupArea/{self.Set_Prodict_ID}.jpg")
+            img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)  # 轉換成 RGB
+            numpy_matrix = edit_point_list.astype(int).tolist()
+            rect_points = [(numpy_matrix[0][0], numpy_matrix[0][1]),
+                           (numpy_matrix[1][0], numpy_matrix[1][1]),
+                           (numpy_matrix[2][0], numpy_matrix[2][1]),
+                           (numpy_matrix[3][0], numpy_matrix[3][1])]
+            draw_rect = np.array(rect_points)
+            for pts in range(len(rect_points)):
+                cv2.circle(img, (int(rect_points[pts][0]), int(rect_points[pts][1])), 3, (0, 0, 255), 5, 16)
+                cv2.putText(img, str(pts + 1), (int(rect_points[pts][0]), int(rect_points[pts][1]) - 10),
+                            cv2.FONT_HERSHEY_SIMPLEX,
+                            1, (0, 100, 255), 1, cv2.LINE_AA)
+
+            center_x = int(sum(x for x, y in rect_points) / len(rect_points))
+            center_y = int(sum(y for x, y in rect_points) / len(rect_points))
+            cv2.polylines(img, [draw_rect.reshape((-1, 1, 2))], True, (0, 255, 0), 3)  # 矩形中心
+            cv2.putText(img, str(rowNum), (center_x, center_y), cv2.FONT_HERSHEY_SIMPLEX,
+                        1, (255, 100, 100), 3, cv2.LINE_AA)
+            img = cv2.resize(img, (1280, 720))  # 根据需要调整尺寸
+            height, width, channel = img.shape  # 讀取尺寸和 channel數量
+            bytesPerline = channel * width  # 設定 bytesPerline ( 轉換使用 )
+            # 轉換影像為 QImage，讓 PyQt5 可以讀取
+            img = QImage(img, width, height, bytesPerline, QImage.Format_RGB888)
+            prod_img = QPixmap.fromImage(img)
+            self.ui.Setting_Setup_img.clear()
+            self.ui.Setting_Setup_img.setPixmap(prod_img)  # QLabel 顯示影像
+            del prod_img
     def linkEvent(self):
         self.ui.stackedWidget.setCurrentIndex(0)#起始頁面
         self.ui.Setting_Table_Area.setCurrentIndex(0)#起始頁面
@@ -974,7 +1030,6 @@ class PyQt_MVC_Main(QMainWindow):
             if action == item1:
                 current_order = self.ui.tableWidget2.item(rowNum,0).text()
                 new_order, ok = QInputDialog.getText(self, '調換順序', 'New Order:', text=current_order)
-
                 if ok:
                     try:
 
@@ -1029,39 +1084,7 @@ class PyQt_MVC_Main(QMainWindow):
                 print('选择了第2个菜单项', self.ui.tableWidget2.item(rowNum, 0).text()
                       , self.ui.tableWidget2.item(rowNum, 1).text())
 
-                img = cv2.imread(f"Static/SetupArea/{self.Set_Prodict_ID}.jpg")
-                edit_point_list = get_four_points_by_edit(img)
-                print("測試 : ",edit_point_list )
-                if edit_point_list != []:
-                    self.ui.tableWidget2.item(rowNum, 1).setText(str(edit_point_list.astype(int).tolist())) #待修正格式
-                    img = cv2.imread(f"Static/SetupArea/{self.Set_Prodict_ID}.jpg")
-                    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)  # 轉換成 RGB
-                    numpy_matrix = edit_point_list.astype(int).tolist()
-                    rect_points = [(numpy_matrix[0][0], numpy_matrix[0][1]),
-                                   (numpy_matrix[1][0], numpy_matrix[1][1]),
-                                   (numpy_matrix[2][0], numpy_matrix[2][1]),
-                                   (numpy_matrix[3][0], numpy_matrix[3][1])]
-                    draw_rect = np.array(rect_points)
-                    for pts in range(len(rect_points)):
-                        cv2.circle(img, (int(rect_points[pts][0]), int(rect_points[pts][1])), 3, (0, 0, 255), 5, 16)
-                        cv2.putText(img, str(pts + 1), (int(rect_points[pts][0]), int(rect_points[pts][1]) - 10),
-                                    cv2.FONT_HERSHEY_SIMPLEX,
-                                    1, (0, 100, 255), 1, cv2.LINE_AA)
-
-                    center_x = int(sum(x for x, y in rect_points) / len(rect_points))
-                    center_y = int(sum(y for x, y in rect_points) / len(rect_points))
-                    cv2.polylines(img, [draw_rect.reshape((-1, 1, 2))], True, (0, 255, 0), 3)  # 矩形中心
-                    cv2.putText(img, str(rowNum), (center_x, center_y), cv2.FONT_HERSHEY_SIMPLEX,
-                                1, (255, 100, 100), 3, cv2.LINE_AA)
-                    img = cv2.resize(img, (1280, 720))  # 根据需要调整尺寸
-                    height, width, channel = img.shape  # 讀取尺寸和 channel數量
-                    bytesPerline = channel * width  # 設定 bytesPerline ( 轉換使用 )
-                    # 轉換影像為 QImage，讓 PyQt5 可以讀取
-                    img = QImage(img, width, height, bytesPerline, QImage.Format_RGB888)
-                    prod_img = QPixmap.fromImage(img)
-                    self.ui.Setting_Setup_img.clear()
-                    self.ui.Setting_Setup_img.setPixmap(prod_img)  # QLabel 顯示影像
-                    del prod_img
+                threading.Thread(target=PyQt_MVC_Main.Edit_Four_Point, args=(self,rowNum)).start()
             elif action == item3:
                 print('刪除', self.ui.tableWidget2.item(rowNum, 0).text()
                       , self.ui.tableWidget2.item(rowNum, 1).text())
