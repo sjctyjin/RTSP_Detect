@@ -406,7 +406,7 @@ class PyQt_MVC_Main(QMainWindow):
                 # cap.release()  # 釋放攝影機資源
                 # self.close()
             finally:
-                print("線程結束")
+                print("顯示線程結束")
     def receive_Qimg(self):
         if self.ImaMatrix != []:
             # print("被執行")
@@ -635,8 +635,10 @@ class PyQt_MVC_Main(QMainWindow):
     def Connection(self):
         print("按下")
         self.ui.Main_Connected.setText("連線")
-        self.Main_Set[0] = True
+        self.Main_Set[0] = False
         self.camIP = self.ui.Main_Cam_IP.text()
+        time.sleep(1)
+        self.Main_Set[0] = True
         cap_result = []
         cap_thread = threading.Thread(target=PyQt_MVC_Main.Cam_flow, args=(self,cap_result))
         cap_thread.start()
