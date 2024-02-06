@@ -2,7 +2,7 @@ from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 from View.Inspect_ui_5 import *
 from PyQt5.QtWidgets import QMainWindow,QApplication
-from PyQt5.QtCore import pyqtSlot
+from PyQt5.QtCore import QThread
 from Model.m_detect import *
 import sys
 import threading
@@ -55,13 +55,20 @@ class PyQt_MVC_Main(QMainWindow):
         self.check_box_num = []#box數量累積計算
         self.check_json_load = []#確認json是否載入
         self.check_CAM_State = 0#確認相機是否成功開啟，若發生斷線問題，則為1
+        self.Four_Point_List = []#設定區域Timer的給定值
         self.Main_img = [self.ui.Main_Crop1,self.ui.Main_Crop2,self.ui.Main_Crop3,self.ui.Main_Crop4,self.ui.Main_Crop5,self.ui.Main_Crop6,self.ui.Main_Crop7,self.ui.Main_Crop8,self.ui.Main_Crop9,self.ui.Main_Crop10] #初始化小視窗label
+        #每秒狀態更新Timer
         self.timer = QtCore.QTimer(self)
         self.timer.timeout.connect(self.update_time)
         self.timer.start(1000)  # 更新間隔設置為 1000 毫秒（1 秒）
+        #畫面刷新Timer
         self.img_timer = QtCore.QTimer(self)
         self.img_timer.timeout.connect(self.receive_Qimg)
         self.img_timer.start(70)  # 更新間隔設置為 1000 毫秒（1 秒）
+        # 區域設定Timer-透過Timer來獨立顯示線程
+        self.ZoneSetting = QtCore.QTimer(self)
+        self.ZoneSetting.timeout.connect(self.Four_Point_Getting)
+        #self.ZoneSetting.start(70)  # 更新間隔設置為 1000 毫秒（1 秒）
         # self.CAM_THREAD = None
         self.ui.label.setScaledContents(True)
         # Add right-click context menu
@@ -174,12 +181,13 @@ class PyQt_MVC_Main(QMainWindow):
                                 # print("Set_ZoneCount : ",self.Set_ZoneCount)
                                 # frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)  # 轉換成 RGB
                                 if self.Set_ZoneCount != "":
-                                    point_list = get_four_points_by_check_len(frame, int(self.Set_ZoneCount),
-                                                                              self.Set_Prodict_ID)
-                                    print("測試 : ", point_list)
-                                    if point_list != []:
+                                    point_lists = get_four_points_by_check_len(frame, int(self.Set_ZoneCount), self.Set_Prodict_ID)
+                                    # self.ZoneSetting.start(1000)
+                                    # point_list = self.Four_Point_List
+                                    print("測試 : ", point_lists)
+                                    if point_lists != []:
                                         df = pd.read_csv('Static/product_info.csv')  # 读取 CSV 文件
-                                        converted_arrays = [arr.astype(int).tolist() for arr in point_list]
+                                        converted_arrays = [arr.astype(int).tolist() for arr in point_lists]
                                         mask = df['Product_ID'] == self.Set_Prodict_ID
                                         if mask.sum() == 1:  # 確保只有一行匹配
                                             df.loc[mask, 'Position'] = [converted_arrays]
@@ -476,7 +484,11 @@ class PyQt_MVC_Main(QMainWindow):
             #     # threading.Thread(target=PyQt_MVC_Main.cam, args=(self,)).start()
             #     time.sleep(6)
             #     print("重置影像")
+    def Four_Point_Getting(self):
+        self.Four_Point_List = get_four_points_by_check_len(frame, int(self.Set_ZoneCount),
+                                                  self.Set_Prodict_ID)
 
+        self.ZoneSetting.stop()
     def linkEvent(self):
         self.ui.stackedWidget.setCurrentIndex(0)#起始頁面
         self.ui.Setting_Table_Area.setCurrentIndex(0)#起始頁面
