@@ -546,24 +546,36 @@ class PyQt_MVC_Main(QMainWindow):
             #     print("重置影像")
     def receive_Setting_Point(self,point):
         print("點位 : ",point)
-        point_lists = point
-        if point_lists != []:
-            df = pd.read_csv('Static/product_info.csv')  # 读取 CSV 文件
-            converted_arrays = [arr.astype(int).tolist() for arr in point_lists]
-            mask = df['Product_ID'] == self.Set_Prodict_ID
-            if mask.sum() == 1:  # 確保只有一行匹配
-                df.loc[mask, 'Position'] = [converted_arrays]
-            df.to_csv('Static/product_info.csv', index=False)
-            # 清空選擇的資料
-            self.Set_ZoneCount = ""
-            self.Set_Prodict_ID = ""
-            # 刷新csv資料
-            self.insert_data(self.ui.tableWidget, df)
-            self.ui.Setting_prod_name.setText("")
-            self.ui.Setting_prod_id.setText("")
-            self.ui.Setting_prod_area.setText("")
-            self.ui.stackedWidget.setCurrentIndex(0)
-            print("完成設置")
+        try:
+
+            point_lists = point
+            print(type(point_lists))
+            if point_lists != []:
+                df = pd.read_csv('Static/product_info.csv')  # 读取 CSV 文件
+                converted_arrays = [arr.astype(int).tolist() for arr in point_lists]
+                print("測試類別 : ",type(converted_arrays))
+                mask = df['Product_ID'] == self.Set_Prodict_ID
+                df.loc[mask, 'Position'] = object
+                print(df.loc[mask, 'Position'])
+
+                if mask.sum() == 1:  # 確保只有一行匹配
+                    print("測試")
+                    df.loc[mask, 'Position'] = [converted_arrays]
+                    print("問題")
+                df.to_csv('Static/product_info.csv', index=False)
+                # 清空選擇的資料
+                self.Set_ZoneCount = ""
+                self.Set_Prodict_ID = ""
+                # 刷新csv資料
+                self.insert_data(self.ui.tableWidget, df)
+                self.ui.Setting_prod_name.setText("")
+                self.ui.Setting_prod_id.setText("")
+                self.ui.Setting_prod_area.setText("")
+                self.ui.stackedWidget.setCurrentIndex(0)
+                print("完成設置")
+        except Exception as e:
+            print(e)
+
 
     def receive_Edit_Point(self, point,rowNum):
         print("測試 : ", point)
@@ -754,7 +766,6 @@ class PyQt_MVC_Main(QMainWindow):
     def finger_detect(self):
         if self.check_finger_switch == 0:
             self.check_finger_switch = 1
-
         else:
             self.check_finger_switch = 0
 
@@ -900,23 +911,27 @@ class PyQt_MVC_Main(QMainWindow):
     def Setting_Area_Save(self):
         print("區塊編輯儲存")
         pst_save = []
-        for pts_list in range(self.ui.tableWidget2.rowCount()):
-            pst_save.append(ast.literal_eval(self.ui.tableWidget2.item(pts_list, 1).text()))
-        # print(pst_save)
-        df = pd.read_csv('Static/product_info.csv')  # 读取 CSV 文件
-        # converted_arrays = [arr.astype(int).tolist() for arr in point_list]
-        mask = df['Product_ID'] == self.Set_Prodict_ID
-        if mask.sum() == 1:  # 確保只有一行匹配
-            df.loc[mask, 'Position'] = [pst_save]
-        print(df)
-        df.to_csv('Static/product_info.csv', index=False)
         try:
+            if self.ui.tableWidget2.rowCount() > 0:
+                for pts_list in range(self.ui.tableWidget2.rowCount()):
+                    pst_save.append(ast.literal_eval(self.ui.tableWidget2.item(pts_list, 1).text()))
+            # print(pst_save)
+            df = pd.read_csv('Static/product_info.csv')  # 读取 CSV 文件
+            # converted_arrays = [arr.astype(int).tolist() for arr in point_list]
+            mask = df['Product_ID'] == self.Set_Prodict_ID
+            if pst_save == []:
+                pst_save = 'nan'
+            if mask.sum() == 1:  # 確保只有一行匹配
+                df.loc[mask, 'Position'] = [pst_save]
+            print(df)
+            df.to_csv('Static/product_info.csv', index=False)
+
             # 避免沒有csv時發生錯誤
             df = pd.read_csv('Static/product_info.csv', header=None,
                              names=['Product', 'Product_ID', 'ZoneCount', 'Setup_time', 'Position'])
             self.insert_data(self.ui.tableWidget, df)  # 刷新csv資料
-        except:
-            pass
+        except Exception as e:
+            print(e)
         self.ui.Setting_Table_Area.setCurrentIndex(0)
         self.Set_Prodict_ID = ""
         self.Set_ZoneCount = ""
