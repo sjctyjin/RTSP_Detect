@@ -402,7 +402,7 @@ class PyQt_MVC_Main(QMainWindow):
                                                 if check_index_inter == 1 and check_thumb_inter == 1 and gesture_result == "hold":
                                                     check_inter_time[0] += 1
                                                     # print("左手 : ", check_inter_time[0])
-                                                    if check_inter_time[0] >= 18:
+                                                    if check_inter_time[0] >= 10:
                                                         self.check_box_num[ckb] = 1
 
                                                 elif check_index_inter == 1 and check_thumb_inter == 1 and gesture_result == "張開手":
@@ -420,7 +420,7 @@ class PyQt_MVC_Main(QMainWindow):
                                                 if check_index_inter == 1 and check_thumb_inter == 1 and gesture_result == "hold":
                                                     check_inter_time[1] += 1
                                                     # print("右手 : ", check_inter_time[1])
-                                                    if check_inter_time[1] >= 18:
+                                                    if check_inter_time[1] >= 10:
                                                         self.check_box_num[ckb] = 1
 
                                                 elif check_index_inter == 1 and check_thumb_inter == 1 and gesture_result == "張開手":

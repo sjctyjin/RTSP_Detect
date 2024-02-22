@@ -14,7 +14,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
-        MainWindow.resize(1931, 1312)
+        MainWindow.resize(1569, 1312)
         MainWindow.setStyleSheet("QPushButton:hover{\n"
 "background-color: #fff;\n"
 " color: #000;\n"
@@ -151,6 +151,7 @@ class Ui_MainWindow(object):
         self.verticalLayout_3.setObjectName("verticalLayout_3")
         self.tabWidget = QtWidgets.QTabWidget(self.centralwidget)
         self.tabWidget.setMinimumSize(QtCore.QSize(1000, 0))
+        self.tabWidget.setStyleSheet("")
         self.tabWidget.setObjectName("tabWidget")
         self.tab = QtWidgets.QWidget()
         self.tab.setObjectName("tab")
@@ -173,7 +174,8 @@ class Ui_MainWindow(object):
         self.Main_frame.setMinimumSize(QtCore.QSize(700, 520))
         self.Main_frame.setMaximumSize(QtCore.QSize(16677, 16777215))
         self.Main_frame.setLayoutDirection(QtCore.Qt.LeftToRight)
-        self.Main_frame.setStyleSheet("border:1px solid\n"
+        self.Main_frame.setStyleSheet("border:1px solid;\n"
+"\n"
 "")
         self.Main_frame.setFrameShape(QtWidgets.QFrame.StyledPanel)
         self.Main_frame.setFrameShadow(QtWidgets.QFrame.Raised)
@@ -212,6 +214,7 @@ class Ui_MainWindow(object):
         font = QtGui.QFont()
         font.setPointSize(30)
         self.label_2.setFont(font)
+        self.label_2.setStyleSheet("")
         self.label_2.setText("")
         self.label_2.setAlignment(QtCore.Qt.AlignBottom|QtCore.Qt.AlignRight|QtCore.Qt.AlignTrailing)
         self.label_2.setObjectName("label_2")
@@ -726,12 +729,12 @@ class Ui_MainWindow(object):
         self.statusbar.setObjectName("statusbar")
         MainWindow.setStatusBar(self.statusbar)
         self.menubar = QtWidgets.QMenuBar(MainWindow)
-        self.menubar.setGeometry(QtCore.QRect(0, 0, 1931, 25))
+        self.menubar.setGeometry(QtCore.QRect(0, 0, 1569, 21))
         self.menubar.setObjectName("menubar")
         MainWindow.setMenuBar(self.menubar)
 
         self.retranslateUi(MainWindow)
-        self.tabWidget.setCurrentIndex(0)
+        self.tabWidget.setCurrentIndex(1)
         self.Setting_Table_Area.setCurrentIndex(0)
         self.stackedWidget.setCurrentIndex(0)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)

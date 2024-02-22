@@ -381,7 +381,7 @@ class PyQt_MVC_Main(QMainWindow):
                             check_no_frame_times = 0
                             self.check_CAM_State = 1
                             self.ui.Main_Connected.setText("重新連線")
-                            self.Main_Set[0] = False
+                            #self.Main_Set[0] = False
                             # =======================
                             break
             except:

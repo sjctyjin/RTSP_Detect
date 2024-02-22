@@ -1,3 +1,6 @@
 記得要把mediapipe、Model、Static跟exe執行檔放在同個資料夾
 
 pyinstaller -F -w --hidden-import=queue --paths="D:\Github\HSK_2024_CASE\Inspect_UI\Static" --paths="D:\Github\HSK_2024_CASE\Inspect_UI\Model" inspect.py -i .\static\favicon.ico
+
+
+pyinstaller -F -w --hidden-import=queue --paths="~/Documents/RTSP_Detect/Inspect_UI/Static" --paths="~/Documents/RTSP_Detect/Inspect_UI/Model" inspect.py -i ./Static/favicon.ico
