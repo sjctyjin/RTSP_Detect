@@ -186,6 +186,7 @@ class PyQt_MVC_Main(QMainWindow):
                     if ret:
 
                         self.Cam_Flow_Receive = frame
+                        cv2.waitKey(1)
                     else:
                         print("沒影像")
                         check_no_frame_times += 1
