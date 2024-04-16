@@ -1,3 +1,17 @@
+"""
+2024-04-02 : 新增勝品提出的需求，
+1. 每一個包裝部件的完成條件 : 1 進入區域拿取 2 到包裝區內 完成兩步才算完成一個包裝環節
+2. 卡步驟，當上一步未完成，跳區域拿的話 跳出錯誤提示
+
+#2024-04-09 修正問題 : 當刪除資料後 重新新增一筆資料時，第一筆資料會被吃掉，因為儲存格式的header沒存進csv中
+修正方式 :
+new_row.to_csv('Static/product_info.csv', mode='a', header=True, index=False)
+這段是新增資料進csv的程式碼，要把header=從 False 改成 True， 14:22 Header問題還是沒解決 OK
+2024-04-09 16:32 新增了 Excel匯入與匯出功能
+
+"""
+
+
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 from View.Inspect_ui_5 import *
@@ -11,22 +25,24 @@ import time
 import datetime
 import traceback
 import mediapipe as mp
-from numpy import linalg
-from PIL import Image, ImageFont, ImageDraw
 import numpy as np
 import pandas as pd
 import ast  # 用於安全地將字符串轉換為數組
 import os
-import imutils
 import psutil
-import queue
 import json
+from pathlib import Path
+
+
+# import queue
+# import imutils
+# from numpy import linalg
+# from PIL import Image, ImageFont, ImageDraw
 
 os.environ['TF_FORCE_GPU_ALLOW_GROWTH'] = 'true'
 
-class ClickableLabelEventFilter(QtCore.QObject):
+class ClickableLabelEventFilter(QtCore.QObject):#點擊設定區域時 跳出畫面
     clicked = QtCore.pyqtSignal()
-
     def eventFilter(self, obj, event):
         if event.type() == QtCore.QEvent.MouseButtonPress:
             self.clicked.emit()
@@ -270,6 +286,9 @@ class PyQt_MVC_Main(QMainWindow):
     receive_edit_point = pyqtSignal(object,int)  # 定義信號 : 接收使用者編輯的區域點座標
     def __init__(self, parent=None):
         super(QMainWindow, self).__init__(parent)
+        """
+            全域變數區
+        """
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
         self.setWindowTitle(f'勝品電通-包裝線偵測')
@@ -282,8 +301,13 @@ class PyQt_MVC_Main(QMainWindow):
                 data = json.load(json_file)
             if data:
                 self.camIP = data["CamIP"]#給定IP值
+
         except:
             print("no data")
+        self.serialNumber = 0  # 流水號
+        self.count_pass_time = 0  # 當人員包裝完成後，透過此變數紀錄時間 過五秒後 更新流水號
+        self.check_Wrong_LOG = [0,0]  # 檢查是否以執行LOG [0:左手,1:右手]
+        self.check_Wrong_LOG_timer = 0  # 計算發生錯誤Log時間，當時間=5時 就把LOG狀態消除，即可重新記錄錯誤
         self.Set_CVZone = 0  # 人員欲設定產品區域時啟動
         self.Set_ZoneCount = ""  # 保存設定區的數量
         self.Set_Prodict_ID = ""  # 保存設定區的物品ID
@@ -311,7 +335,6 @@ class PyQt_MVC_Main(QMainWindow):
         self.img_timer = QtCore.QTimer(self)
         self.img_timer.timeout.connect(self.receive_Qimg)
         self.img_timer.start(70)  # 更新間隔設置為 1000 毫秒（1 秒）
-
         self.ui.label.setScaledContents(True)
         # Add right-click context menu
         self.context_menu = QMenu(self)
@@ -322,14 +345,14 @@ class PyQt_MVC_Main(QMainWindow):
         # Connect the custom context menu to the tableWidget
         self.ui.tableWidget.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.ui.tableWidget.customContextMenuRequested.connect(self.generateMenu)
-
         self.ui.tableWidget2.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         self.ui.tableWidget2.customContextMenuRequested.connect(self.generateMenu2)
         # 設定Focus
         self.ui.Main_Prod_SN.setFocus()
+        self.Current_Prod_SN = "" #紀錄比對當前SN編號
         # 创建事件过滤器实例并应用于 Setup_img
-        self.clickableLabelFilter = ClickableLabelEventFilter(self)
-        self.clickableLabelFilter.clicked.connect(self.Setup_Zone)
+        self.clickableLabelFilter = ClickableLabelEventFilter(self) # 綁訂QLabel 影像點擊事件
+        self.clickableLabelFilter.clicked.connect(self.Setup_Zone)  # 綁訂點擊後 執行事件
         self.ui.Setting_Setup_img.installEventFilter(self.clickableLabelFilter)
         # self.show()
         # 設置全屏
@@ -368,25 +391,31 @@ class PyQt_MVC_Main(QMainWindow):
                     self.check_CAM_State = 1
                     break
                 while self.Reset_Frame_var[0]:
+                    if self.check_CAM_State == 0:#當被按下重製時check_CAM_State = 0，就不會跳出warning框
+                        check_no_frame_times = 0
                     # print('讀取中')
                     ret, frame = cap.read()  # 讀取攝影機畫面
                     if ret:
 
                         self.Cam_Flow_Receive = frame
-                        cv2.waitKey(1)
+                        cv2.waitKey(10)#設定幀數
                     else:
                         print("沒影像")
                         check_no_frame_times += 1
                         if check_no_frame_times >= 1000:
                             print("重置")
-                            check_no_frame_times = 0
+                            # check_no_frame_times = 0
                             self.check_CAM_State = 1
                             self.ui.Main_Connected.setText("重新連線")
                             #self.Main_Set[0] = False
                             # =======================
                             break
+                cap.release()
             except:
                 print("讀取錯誤")
+            # finally:
+
+            time.sleep(10)
 
     def Cam_Display(self):
         box_alpha = 0.5
@@ -408,6 +437,7 @@ class PyQt_MVC_Main(QMainWindow):
                 check_inter_time = [0, 0]  # 判斷左手或右手的停留時間，左手 = check_inter_time[0],右手 = check_inter_time[1]
 
                 while True:
+                    # print("包裝S/N : ",self.ui.Main_Prod_SN.text())
 
                     if self.Cam_Flow_Receive != []:
 
@@ -425,6 +455,9 @@ class PyQt_MVC_Main(QMainWindow):
                             orig = frame.copy()
 
                             output_image = []
+                            if self.Current_Prod_SN != self.ui.Main_Prod_SN.text():#當更換流水號時 歸零前面的檢查結果
+                                self.check_box_num = [0 for _ in self.check_box_num]
+                                self.Current_Prod_SN = self.ui.Main_Prod_SN.text()
                             if check != self.Current_Prodict_ID:
                                 check = self.Current_Prodict_ID
                                 try:
@@ -477,16 +510,22 @@ class PyQt_MVC_Main(QMainWindow):
                             # print("設店前")
                             # if point_list:
                             try:
+
                                 # print("畫框線",point_list)
                                 for i in point_list:
                                     # print(i[0])
                                     output_image.append(warry_transfer(orig, i))
                                 for ckb in range(len(self.check_box_num)):  # 遍歷box數量
-                                    if self.check_box_num[ckb] == 1:
+                                    if self.check_box_num[ckb] == 1:#當第一次進入區域時
                                         # 手指在多邊形內，改變多邊形顏色
                                         overlay = orig.copy()
                                         cv2.fillPoly(overlay, [point_list[ckb].astype(int).reshape((-1, 1, 2))],
                                                      (255, 0, 0), cv2.LINE_AA)
+                                        orig = cv2.addWeighted(overlay, box_alpha, orig, 1 - box_alpha, 0)
+                                    elif self.check_box_num[ckb] == 2:#當完成時
+                                        overlay = orig.copy()
+                                        cv2.fillPoly(overlay, [point_list[ckb].astype(int).reshape((-1, 1, 2))],
+                                                     (0, 200, 0), cv2.LINE_AA)
                                         orig = cv2.addWeighted(overlay, box_alpha, orig, 1 - box_alpha, 0)
                                     else:
                                         # 手指不在多邊形內，畫正常多邊形
@@ -554,7 +593,7 @@ class PyQt_MVC_Main(QMainWindow):
                                     for ckb in range(len(self.check_box_num)):  # 遍歷box數量
                                         # print("確認點位置 : ",point_list[ckb])
                                         try:
-                                            if hand_type == "Left":
+                                            if hand_type == "Left":#左手
                                                 check_index_inter = cv2.pointPolygonTest(
                                                     point_list[ckb].astype(int).reshape((-1, 1, 2)),
                                                     (index_fingertip_x, index_fingertip_y), False)
@@ -562,56 +601,180 @@ class PyQt_MVC_Main(QMainWindow):
                                                     point_list[ckb].astype(int).reshape((-1, 1, 2)),
                                                     (thumb_tip_x, thumb_tip_y), False)
 
+                                                if check_index_inter == 1 and check_thumb_inter == 1:  # 確認手進入到最終包裝區，與其他區域的判定是分開的
+                                                    check_inter_time[0] += 1
+                                                    #
+                                                    if check_inter_time[0] >= 15:
+                                                        if ckb == len(self.check_box_num) - 1:#如果當前的序號 = 所有box數 表示最後一個
+                                                            print("終點")
+                                                            self.check_Wrong_LOG = [0, 0]  # 只要有通過包裝區，同步將錯誤trigger 重置
+                                                            for final_goal in range(len(self.check_box_num)):#再透過迴圈檢查一次 確定全部都pass後 就結束
+                                                                if self.check_box_num[final_goal] == 1:#如果當前檢查的是box = 1 就給 2代表這一step結束
+                                                                    print("第", final_goal , "筆-結束")
+                                                                    self.check_box_num[final_goal] = 2
+                                                                    #紀錄包裝完成區域(左手)
+                                                                    PyQt_MVC_Main.Write_Done_LOG(self,final_goal+1)
+                                                                elif self.check_box_num[final_goal] == 2:#如果檢測到這個box狀態是2 則表示結束
+                                                                    print("結束")
+
                                                 if check_index_inter == 1 and check_thumb_inter == 1 and gesture_result == "hold":
                                                     check_inter_time[0] += 1
-                                                    # print("左手 : ", check_inter_time[0])
-                                                    if check_inter_time[0] >= 18:
-                                                        self.check_box_num[ckb] = 1
+                                                    print("左手 : ", check_inter_time[0])
+                                                    print("ckb : ",ckb)
+                                                    print("數量 : ",len(self.check_box_num))
+                                                    if check_inter_time[0] >= 20:
+                                                        if ckb != 0:  # 先確認是否是第一個框
+                                                            if self.check_box_num[ckb-1] == 2:  # 確認上個框是否已完成
+                                                                if self.check_box_num[ckb] != 2: # 確認當前框是否未完成 2 = 完成
+                                                                    self.check_box_num[ckb] = 1  # 確認完成才給過
+                                                                    self.check_Wrong_LOG = [0,0]  # 只要有通過了，同步將錯誤trigger 重置
+                                                            else:  # 檢查左手包裝步驟
+                                                                if ckb != len(self.check_box_num) - 1:  #
+                                                                    orig = text(orig,
+                                                                                f"包裝步驟錯誤，請先完成上一步",
+                                                                                300, (50), 60,
+                                                                                (0, 0, 255))
+                                                                    if self.check_Wrong_LOG[0] == 0:#當發生包裝錯誤時，LOG訊號check_Wrong_LOG是空時，則紀錄一筆
+                                                                        print('錯誤LOG ===============================================================')
+                                                                        Fault_Save_path = f'Static/Fault/{time.strftime("%Y_%m_%d")}'
+                                                                        log_img_name = f'{Fault_Save_path}/{str(time.time()).split(".")[0]}.jpg'
+                                                                        if not Path(Fault_Save_path).exists():
+                                                                            Path(Fault_Save_path).mkdir(parents=True, exist_ok=True)
+                                                                        # 保存excel
+                                                                        cv2.imwrite(log_img_name, orig)
+                                                                        PyQt_MVC_Main.Write_Defect_LOG(self,log_img_name,ckb+1)#錯誤LOG
+                                                                        self.check_Wrong_LOG[0] = 1
 
-                                                elif check_index_inter == 1 and check_thumb_inter == 1 and gesture_result == "張開手":
-                                                    self.check_box_num[ckb] = 0
-                                                    check_inter_time[0] = 0  # 計時歸零
+                                                                    # print("錯誤")
+                                                        elif ckb == 0:  # 等於第一個框
+                                                            if self.check_box_num[ckb] != 2:  # 如果不等於step 2 就是 step 1
+                                                                self.check_box_num[ckb] = 1
+                                                                self.check_Wrong_LOG = [0, 0]  # 只要有通過了，同步將錯誤trigger 重置，要再確認重置條件，否則沒有回到本位上 ，當發生過一次錯誤紀錄後，就無法記錄了
+                                                        # else:#等於第一個框
+                                                        #     self.check_box_num[ckb] = 1
+                                                else:#當非hold以外的任何手勢
+                                                    if check_index_inter == 1 and check_thumb_inter == 1:  # 確認右手進入到最終包裝區，與其他區域的判定是分開的
+                                                        if ckb == len(self.check_box_num) - 1:#確認是否為最後一格
+                                                            print("終點檢查")
+                                                            if check_inter_time[1] >= 20:
+                                                                if self.check_box_num[ckb - 1] == 2:  # 確認上個框是否已完成
+                                                                    if self.check_box_num[ckb] != 2:
+                                                                        self.check_box_num[ckb] = 1  # 確認完成才給過
+                                                                        self.check_Wrong_LOG = [0,0]  # 只要有通過了，同步將錯誤trigger 重置
+                                                # elif check_index_inter == 1 and check_thumb_inter == 1 and gesture_result == "張開手":
+                                                #     self.check_box_num[ckb] = 0
+                                                #     check_inter_time[0] = 0  # 計時歸零
 
                                             else:  # 右手
                                                 check_index_inter = cv2.pointPolygonTest(
                                                     point_list[ckb].astype(int).reshape((-1, 1, 2)),
-                                                    (index_fingertip_x, index_fingertip_y), False)
+                                                    (index_fingertip_x, index_fingertip_y), False) #確認食指是否在區域內
                                                 check_thumb_inter = cv2.pointPolygonTest(
                                                     point_list[ckb].astype(int).reshape((-1, 1, 2)),
-                                                    (thumb_tip_x, thumb_tip_y), False)
+                                                    (thumb_tip_x, thumb_tip_y), False) #確認拇指是否在區域內
 
+                                                if check_index_inter == 1 and check_thumb_inter == 1:  # 確認右手進入到最終包裝區，與其他區域的判定是分開的
+                                                    check_inter_time[1] += 1
+                                                    # self.check_Wrong_LOG = [0, 0]  # 只要有通過包裝區，同步將錯誤 trigger 重置
+                                                    if check_inter_time[1] >= 15:
+                                                        if ckb == len(self.check_box_num) - 1: # 如果當前的序號 = 所有box數 表示最後一個
+                                                            print("終點")
+                                                            self.check_Wrong_LOG = [0, 0]  # 只要有通過包裝區，同步將錯誤trigger 重置
+                                                            for final_goal in range(len(self.check_box_num)): # 再透過迴圈檢查一次 確定全部都pass後 就結束
+                                                                if self.check_box_num[final_goal] == 1:  # 如果當前檢查的是box = 1 就給 2代表這一step結束
+                                                                    print("第", final_goal, "筆-結束")
+                                                                    self.check_box_num[final_goal] = 2
+                                                                    # 紀錄包裝完成區域(右手)
+                                                                    PyQt_MVC_Main.Write_Done_LOG(self, final_goal + 1)
+                                                                elif self.check_box_num[final_goal] == 2:  # 如果檢測到這個box狀態是2 則表示結束
+                                                                    print("結束")
                                                 if check_index_inter == 1 and check_thumb_inter == 1 and gesture_result == "hold":
                                                     check_inter_time[1] += 1
-                                                    # print("右手 : ", check_inter_time[1])
-                                                    if check_inter_time[1] >= 18:
-                                                        self.check_box_num[ckb] = 1
+                                                    print("右手 : ", check_inter_time[1])
+                                                    print("ckb : ", ckb)
+                                                    print("數量 : ", len(self.check_box_num))
+                                                    if check_inter_time[1] >= 20:
 
-                                                elif check_index_inter == 1 and check_thumb_inter == 1 and gesture_result == "張開手":
-                                                    self.check_box_num[ckb] = 0
-                                                    check_inter_time[1] = 0
+                                                        if ckb != 0:  # 先確認是否是第一個框
+                                                            if self.check_box_num[ckb - 1] == 2:  # 確認上個框是否已完成
+                                                                if self.check_box_num[ckb] != 2:
+                                                                    self.check_box_num[ckb] = 1  # 確認完成才給過
+                                                                    self.check_Wrong_LOG = [0,0]  # 只要有通過了，同步將錯誤trigger 重置
+                                                            else: #檢查包裝步驟
+                                                                if ckb != len(self.check_box_num) - 1:
+                                                                    orig = text(orig,
+                                                                                f"包裝步驟錯誤，請先完成上一步",
+                                                                                300, (50), 60,
+                                                                                (0, 0, 255))
+                                                                    if self.check_Wrong_LOG[1] == 0:
+                                                                        print('錯誤LOG ===============================================================')
+                                                                        Fault_Save_path = f'Static/Fault/{time.strftime("%Y_%m_%d")}'
+                                                                        log_img_name = f'{Fault_Save_path}/{str(time.time()).split(".")[0]}.jpg'
+                                                                        if not Path(Fault_Save_path).exists():#建檔
+                                                                            Path(Fault_Save_path).mkdir(parents=True,
+                                                                                                        exist_ok=True)
+                                                                        # 保存excel
+                                                                        cv2.imwrite(log_img_name, orig)
+                                                                        PyQt_MVC_Main.Write_Defect_LOG(self,log_img_name,ckb+1)#錯誤LOG
+                                                                        self.check_Wrong_LOG[1] = 1
+
+                                                        elif ckb == 0:  # 等於第一個框
+                                                            if self.check_box_num[ckb] != 2:
+                                                                self.check_box_num[ckb] = 1
+                                                                self.check_Wrong_LOG = [0, 0]  # 只要有通過了，同步將錯誤trigger 重置
+                                                else:#當非hold以外的任何手勢
+                                                    if check_index_inter == 1 and check_thumb_inter == 1:  # 確認右手進入到最終包裝區，與其他區域的判定是分開的
+                                                        if ckb == len(self.check_box_num) - 1:
+                                                            print("終點檢查")
+                                                            if check_inter_time[1] >= 20:
+                                                                if self.check_box_num[ckb - 1] == 2:  # 確認上個框是否已完成
+                                                                    if self.check_box_num[ckb] != 2:
+                                                                        self.check_box_num[ckb] = 1  # 確認完成才給過
+                                                                        self.check_Wrong_LOG = [0,0]  # 只要有通過了，同步將錯誤trigger 重置
+                                                # elif check_index_inter == 1 and check_thumb_inter == 1 and gesture_result == "張開手":
+                                                #     self.check_box_num[ckb] = 0
+                                                #     check_inter_time[1] = 0
 
                                         except:
                                             # print("wrong")
                                             print(traceback.print_exc())
                             # if output_image != []:
-
                             try:
+                                count_finish_box = 0
+                                for final_goal in range(len(self.check_box_num)):
+                                    if self.check_box_num[final_goal] == 2:
+                                        count_finish_box += 1
+                                if count_finish_box == len(self.check_box_num):
+                                    orig = text(orig,
+                                                f"已完成 {5-self.count_pass_time} 秒後更新",
+                                                orig.shape[0]//2, (50), 60,
+                                                (100, 255, 0))
                                 # print("建置分割圖")
                                 crop_part = []
                                 if len(self.check_box_num) != 0:
                                     for s in range(len(self.check_box_num)):  # 遍歷box數量
                                         crop = cv2.cvtColor(output_image[s], cv2.COLOR_BGR2RGB)  # 轉換成 RGB
-
                                         crop = cv2.resize(crop, (240, 160))
-                                        if self.check_box_num[s] == 1:
+                                        if self.check_box_num[s] == 1:#如果判斷當前動作是剛取件，則畫三角形
+                                            # cv2.circle(crop, (int(crop.shape[1] // 2), int(crop.shape[0] // 2) - 10),
+                                            #            50,
+                                            #            (0, 255, 0), 5, 16)
+                                            repts = np.array([[120, 10], [40, 120], [200, 120]], np.int32)
+
+                                            # 将顶点数组变形成(1, -1, 2)的形状
+                                            repts = repts.reshape((-1, 1, 2))
+                                            cv2.polylines(crop, [repts], True, (160,200, 190), 15)
+
+                                        elif self.check_box_num[s] == 2:#如果判斷已完成連續動作，則畫圈
                                             cv2.circle(crop, (int(crop.shape[1] // 2), int(crop.shape[0] // 2) - 10),
                                                        50,
                                                        (0, 255, 0), 5, 16)
-                                        else:
-                                            cv2.line(crop, (0, 0), (crop.shape[1], crop.shape[0] - 20), (255, 0, 0),
-                                                     15)  # 繪製線條
-                                            cv2.line(crop, (crop.shape[1], 0), (0, crop.shape[0] - 20), (255, 0, 0),
-                                                     15)  # 繪製線條
+                                        else:#畫叉叉
+                                            if s != len(self.check_box_num)-1: #最後一個框是包裝區，不畫叉
+                                                cv2.line(crop, (0, 0), (crop.shape[1], crop.shape[0] - 20), (255, 0, 0),
+                                                         15)  # 繪製線條
+                                                cv2.line(crop, (crop.shape[1], 0), (0, crop.shape[0] - 20), (255, 0, 0),
+                                                         15)  # 繪製線條
                                         crop_part.append(crop)
                                     self.ImaMatrix_part = crop_part  # 將分割圖象存放於全域變數
                             except:
@@ -625,8 +788,6 @@ class PyQt_MVC_Main(QMainWindow):
                                 break
                     else:
                         pass
-                        # print("no ret-",time.strftime("%Y-%m-%d %H:%M:%S"))
-                        # print("等待圖像")
 
             except:
                 print("rerun")
@@ -707,7 +868,7 @@ class PyQt_MVC_Main(QMainWindow):
             #     # threading.Thread(target=PyQt_MVC_Main.cam, args=(self,)).start()
             #     time.sleep(6)
             #     print("重置影像")
-    def receive_Setting_Point(self,point):
+    def receive_Setting_Point(self,point):#初次建檔保存點位
         print("點位 : ",point)
         try:
             point_lists = point
@@ -717,7 +878,10 @@ class PyQt_MVC_Main(QMainWindow):
                 df = pd.read_csv('Static/product_info.csv')
                 converted_arrays = [arr.astype(int).tolist() for arr in point_lists]
                 print(converted_arrays)
+                print("產品表單 : ",df['Product_ID'])
+                print("選擇的產品ID : ",self.Set_Prodict_ID)
                 mask = df['Product_ID'] == self.Set_Prodict_ID
+                print("到這裡都還沒問題 - 809")
                 df.loc[mask, 'Position'] = object
                 if mask.sum() == 1:  # 確保只有一行匹配
                     df.loc[mask, 'Position'] = [converted_arrays]
@@ -725,7 +889,9 @@ class PyQt_MVC_Main(QMainWindow):
                 # df = pd.read_csv('Static/product_info.csv')  # 读取 CSV 文件
                 df = pd.read_csv('Static/product_info.csv', header=None,
                                  names=['Product', 'Product_ID', 'ZoneCount', 'Position','Setup_time'])
+                print("到這裡都還沒問題 - 816")
                 print(df)
+                print("到這裡都還沒問題 - 819")
                 # 清空選擇的資料
                 self.Set_ZoneCount = ""
                 self.Set_Prodict_ID = ""
@@ -738,7 +904,7 @@ class PyQt_MVC_Main(QMainWindow):
                 print("完成設置")
         except Exception as e:
             print(e)
-    def receive_Edit_Point(self, point,rowNum):
+    def receive_Edit_Point(self, point,rowNum):#編輯點位
         print("測試 : ", point)
         print("ROW 序號 : ", rowNum)
         edit_point_list = point
@@ -785,13 +951,15 @@ class PyQt_MVC_Main(QMainWindow):
                 print("error in 806")
                 print(traceback.print_exc())
 
-    def linkEvent(self):
+    def linkEvent(self):#程式進入點
         self.ui.stackedWidget.setCurrentIndex(0)  # 起始頁面
         self.ui.Setting_Table_Area.setCurrentIndex(0)  # 起始頁面
         self.ui.tabWidget.setCurrentIndex(0)
         self.ui.Main_Cam_IP.setText(self.camIP)
         self.ui.Setting_BackSetup.pressed.connect(self.BackForm1)
         self.ui.Leave.clicked.connect(self.leave)
+        self.ui.Export_excel.clicked.connect(self.Export_Excel)
+        self.ui.Import_excel.clicked.connect(self.Import_Excel)
 
         try:
             # 避免沒有csv時發生錯誤
@@ -805,6 +973,7 @@ class PyQt_MVC_Main(QMainWindow):
                 self.Main_img[clr_mig].setFixedSize(240, 160)
         except:
             pass
+
         # Qbutton
         self.ui.Main_Connected.clicked.connect(self.Connection)
         self.ui.Main_Frame_reset.clicked.connect(self.Frame_reset)
@@ -829,6 +998,20 @@ class PyQt_MVC_Main(QMainWindow):
                 self.ui.Main_Cam_IP.setText(data["CamIP"])
                 self.ui.Main_Prod_ID.setText(data["Product_ID"])
                 self.ui.Main_Prod_SN.setText(data["Product_SN"])
+                if self.ui.Main_Prod_SN.text() == "": # 初始化 流水號
+                    print("給定SN")
+                    self.serialNumber = 1
+                    self.ui.Finish_count.setText(str(self.serialNumber - 1))
+                    self.ui.Main_Prod_SN.setText(f"{time.strftime('%y%m%d')}{str(self.serialNumber).zfill(4)}")
+                else:                                 # 依日期 更新流水號
+                    self.serialNumber = int(data["Product_SN"][6:])#先給定
+                    self.ui.Finish_count.setText(str(self.serialNumber-1))
+                    #判斷當前流水號是否為今天日期，若不是則刷新流水號條碼
+                    if int(self.ui.Main_Prod_SN.text()[0:6]) < int(time.strftime('%y%m%d')):
+                        self.serialNumber = 1
+                        self.ui.Finish_count.setText(str(self.serialNumber - 1))
+                        self.ui.Main_Prod_SN.setText(f"{time.strftime('%y%m%d')}{str(self.serialNumber).zfill(4)}")
+
                 self.check_json_load = 1
                 # 打印读取的数据
                 print("Timestamp:", data["timestamp"])
@@ -884,10 +1067,8 @@ class PyQt_MVC_Main(QMainWindow):
             self.check_finger_switch = 1
         else:
             self.check_finger_switch = 0
-
     def Prod_id_textcganger(self):
         self.Current_Prodict_ID = self.ui.Main_Prod_ID.text()
-
     def Setup_Zone(self):
         print("設定")
         if self.ui.Setting_Setup_img.text() != "":  # 尚未設定匡列區域
@@ -959,6 +1140,8 @@ class PyQt_MVC_Main(QMainWindow):
         time.sleep(1)
         self.Reset_Frame_var[0] = True
         cap_thread.join(timeout=8)
+        self.check_CAM_State = 0
+
         # 檢查是否成功開啟相機
         if not cap_result or not cap_result[0].isOpened():
             print("無法開啟相機--644")
@@ -969,7 +1152,8 @@ class PyQt_MVC_Main(QMainWindow):
         else:
             print("相機成功開啟")
 
-    def BuildData(self):
+    def BuildData(self):#建檔
+
         prodname = self.ui.Setting_prod_name.text()
         prodID = self.ui.Setting_prod_id.text()
         prodarea = self.ui.Setting_prod_area.text()
@@ -977,31 +1161,48 @@ class PyQt_MVC_Main(QMainWindow):
         try:
             if prodname != "" and prodID != "":
                 if prodarea.isdigit():
-                    if int(prodarea) <= 10 and int(prodarea) > 0:
+                    if int(prodarea) <= 10 and int(prodarea) > 1:
                         print("區域數量 : ", prodarea)
                         print("品名 : ", prodname)
                         print("編號 : ", prodID)
                         proddata = {
-                            'Product': prodname,
-                            'Product_ID': prodID,
-                            'ZoneCount': int(prodarea),  # 將 ndarray 轉換為列表
+                            'Product': [prodname],
+                            'Product_ID': [prodID],
+                            'ZoneCount': [int(prodarea)],  # 將 ndarray 轉換為列表
                             'Position': [""],  # 將 ndarray 轉換為列表
-                            'Setup_time': datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                            'Setup_time': [datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')]
                         }
+
+
                         try:
-                            df = pd.read_csv('Static/product_info.csv', header=None,
+                            df = pd.read_csv('Static/product_info.csv',header=None,
                                              names=['Product', 'Product_ID', 'ZoneCount', 'Position', 'Setup_time'])
 
                             mask = df['Product_ID'] == self.ui.Setting_prod_id.text()
                             print(df)
+
                             if mask.sum() != 1:  # 確保只有一行匹配
 
                                 new_row = pd.DataFrame(proddata)
-                                new_row.to_csv('Static/product_info.csv', mode='a', header=False, index=False)
+                                df = df.append(new_row, ignore_index=True)
+                                # 将整个DataFrame写回文件，包含标题行
+                                df.to_csv('Static/product_info.csv', header=False, index=False)
+                                # # 检查文件是否存在且不为空
+                                # if not os.path.exists('Static/product_info.csv') or os.stat(
+                                #         'Static/product_info.csv').st_size == 0:
+                                #     # 文件不存在或为空，因此写入标题
+                                #     new_row.to_csv('Static/product_info.csv', mode='a', header=True, index=False)
+                                # else:
+                                #     # 文件已存在且不为空，因此不写入标题
+                                #     new_row.to_csv('Static/product_info.csv', mode='a', header=False, index=False)
+
+                                # new_row.to_csv('Static/product_info.csv', mode='a', header=False, index=False)
+                                # new_row.to_csv('Static/product_info.csv', mode='a', header=True, index=False)
 
                                 #新增
                                 df = pd.read_csv('Static/product_info.csv', header=None,
                                                  names=['Product', 'Product_ID', 'ZoneCount', 'Position', 'Setup_time'])
+                                # df = pd.read_csv('Static/product_info.csv', header=None)
                                 print("重新讀取 : ", df)
                                 self.insert_data(self.ui.tableWidget, df)  # 刷新csv資料
                                 self.ui.Setting_prod_name.setText("")
@@ -1027,10 +1228,10 @@ class PyQt_MVC_Main(QMainWindow):
                             self.ui.stackedWidget.setCurrentIndex(0)
                             del proddata
                     else:
-                        msg_box = QMessageBox(QMessageBox.Warning, '警告', '偵測框數量請輸入1~10之間數值')
+                        msg_box = QMessageBox(QMessageBox.Warning, '警告', '偵測框數量請輸入2~10之間數值')
                         msg_box.exec_()
                 else:
-                    msg_box = QMessageBox(QMessageBox.Warning, '警告', '偵測框數量請輸入1~10之間數值')
+                    msg_box = QMessageBox(QMessageBox.Warning, '警告', '偵測框數量請輸入2~10之間數值')
                     msg_box.exec_()
         except:
             print(traceback.print_exc())
@@ -1069,7 +1270,7 @@ class PyQt_MVC_Main(QMainWindow):
         self.ui.Setting_Table_Area.setCurrentIndex(0)
         print("返回設定")
 
-    def cell_was_clicked(self, row, column):
+    def cell_was_clicked(self, row, column):# 點擊Table1
         # 獲取該行所有單元格的數據
         row_data = [self.ui.tableWidget.item(row, col).text() for col in range(self.ui.tableWidget.columnCount())]
         print("Row {} data: {}".format(row, row_data))
@@ -1128,7 +1329,7 @@ class PyQt_MVC_Main(QMainWindow):
         except:
             self.ui.Setting_Setup_img.setText("未設定區域\n(點一下設定區域)")
 
-    def cell_was_clicked2(self, row, column):
+    def cell_was_clicked2(self, row, column):#點擊Table2
         # 獲取該行所有單元格的數據
         row_data = [self.ui.tableWidget2.item(row, col).text() for col in range(self.ui.tableWidget2.columnCount())]
         print("Row {} data: {}".format(row, row_data))
@@ -1178,6 +1379,7 @@ class PyQt_MVC_Main(QMainWindow):
         os._exit(1)
 
     def update_time(self):
+        # print("檢測結果 : ",self.check_Wrong_LOG)
         current_time = time.strftime("%Y-%m-%d %H:%M:%S")
         # print(self.ImaMatrix)
         self.ui.label_2.setText(current_time)
@@ -1197,8 +1399,34 @@ class PyQt_MVC_Main(QMainWindow):
         with open("data.json", "w") as json_file:
             json.dump(data_to_record, json_file)
         if self.check_CAM_State == 1:
-            self.check_CAM_State = 0
+            # self.check_CAM_State = 0
             PyQt_MVC_Main.Warring_Message(self, "影像中斷、請重新連線")
+        count_finish_box = 0 # 計算完成的眶數 如果跟設定框數量一樣後 就刷新流水號
+        for final_goal in range(len(self.check_box_num)):
+            if self.check_box_num[final_goal] == 2:
+                count_finish_box += 1
+        if len(self.check_box_num) != 0:#先確認是否有偵測框，沒有的話可能是資料被清空
+            if count_finish_box == len(self.check_box_num): # 當上面計算完完成數量與設定框數一致時就開始算時間
+                self.count_pass_time += 1
+                if self.count_pass_time == 5:
+                    self.ui.Finish_count.setText(str(self.serialNumber))  # 更新完成數量
+                    self.serialNumber += 1 # 流水號+1
+                    self.ui.Main_Prod_SN.setText(f"{time.strftime('%y%m%d')}{str(self.serialNumber).zfill(4)}") #更新流水號
+                    self.count_pass_time = 0 # 歸零時間計算
+                    #完成包裝紀錄LOG
+                    # PyQt_MVC_Main.Write_Done_LOG(self)
+
+        if self.check_Wrong_LOG[0] == 1 or self.check_Wrong_LOG[1] == 1: # 檢測是否有步驟錯誤有的話啟動拍照後 在此等待10秒
+            self.check_Wrong_LOG_timer += 1
+            print("檢測Bug Time : ",self.check_Wrong_LOG_timer)
+            if self.check_Wrong_LOG_timer == 10:
+                self.check_Wrong_LOG = [0,0]
+                self.check_Wrong_LOG_timer = 0  # 錯誤LOG timer歸零
+                print("重置Bug Log")
+                print("歸零Bug Log Timer")
+        # elif self.check_Wrong_LOG[0] == 0 and self.check_Wrong_LOG[1] == 0:
+        #     self.check_Wrong_LOG_timer = 0 #錯誤LOG timer歸零
+        #     print("歸零Bug Log Timer")
 
     """
         Tabel資料表處理
@@ -1271,7 +1499,7 @@ class PyQt_MVC_Main(QMainWindow):
 
                     df = pd.DataFrame(data, columns=["Product", "Product_ID", "ZoneCount", "Position", "Setup_time"])
                     # Step 3: Save DataFrame to CSV
-                    df.to_csv("Static/product_info.csv", index=False,header=None)
+                    df.to_csv("Static/product_info.csv", index=False,header=True)
 
             else:
                 print('No clicked.')
@@ -1311,15 +1539,18 @@ class PyQt_MVC_Main(QMainWindow):
                     try:
 
                         new_order_int = int(new_order)
+                        print("完成 : ",new_order_int)
                         if new_order_int <= self.ui.tableWidget2.rowCount() and new_order_int > 0:
                             # Swap the data between the selected row and the target row
+                            print("完成測試 1: ", new_order_int)
                             self.swapRows(rowNum, new_order_int - 1)
-                            matrixs = eval(self.ui.tableWidget2.item(rowNum, 1))
+                            print("完成測試 2: ", rowNum)
+                            print("完成測試 3: ", self.ui.tableWidget2.item(new_order_int-1, 1).text())
+                            matrixs = eval(self.ui.tableWidget2.item(new_order_int-1, 1).text())#取指定的欄位矩陣值
+                            print("完成測試 3:",matrixs)
                             # 将Python对象转换为NumPy矩阵
                             numpy_matrix = np.array(matrixs)
 
-                            print(numpy_matrix)
-                            print(numpy_matrix[1][0])
                             img = cv2.imread(f"Static/SetupArea/{self.Set_Prodict_ID}.jpg")
                             img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)  # 轉換成 RGB
 
@@ -1350,11 +1581,14 @@ class PyQt_MVC_Main(QMainWindow):
                             self.ui.Setting_Setup_img.clear()
                             self.ui.Setting_Setup_img.setPixmap(prod_img)  # QLabel 顯示影像
                             del prod_img
+                            # click_item = self.ui.tableWidget2.item(new_order_int, 1)
+                            # click_item.setSelected(True)
+
                         else:
                             msg_box = QMessageBox(QMessageBox.Warning, '警告', '超出範圍')
                             msg_box.exec_()
                     except ValueError:
-                        pass
+                        print(traceback.print_exc())
                 print('选择了第1个菜单项', self.ui.tableWidget2.item(rowNum, 0).text()
                       , self.ui.tableWidget2.item(rowNum, 1).text())
             elif action == item2:
@@ -1384,16 +1618,7 @@ class PyQt_MVC_Main(QMainWindow):
         except:
             pass
 
-    def swapRows(self, row1, row2):
-        # Swap data between two rows
-        # for column in range(self.columnCount()):
-        #     item1 = self.item(row1, column)
-        #     item2 = self.item(row2, column)
-        #     item1_text = item1.text()
-        #     item2_text = item2.text()
-        #
-        #     item1.setText(item2_text)
-        #     item2.setText(item1_text)
+    def swapRows(self, row1, row2):#順序更換
 
         for column in range(self.ui.tableWidget2.columnCount()):
             item1 = self.ui.tableWidget2.item(row1, column)
@@ -1412,6 +1637,130 @@ class PyQt_MVC_Main(QMainWindow):
 
         order1_item.setText(order2_text)
         order2_item.setText(order1_text)
+    def Export_Excel(self):#匯出Excel
+
+        # 获取表格的列标题
+        column_headers = [self.ui.tableWidget.horizontalHeaderItem(i).text() for i in range(self.ui.tableWidget.columnCount())]
+        df = pd.DataFrame(columns=column_headers)
+
+        # 遍历所有行和列，将数据添加到DataFrame
+        for row in range(self.ui.tableWidget.rowCount()):
+            row_data = []
+            for column in range(self.ui.tableWidget.columnCount()):
+                item = self.ui.tableWidget.item(row, column)
+                # 获取单元格数据
+                row_data.append(item.text() if item is not None else "")
+            df.loc[row] = row_data
+
+        # 将DataFrame保存为Excel文件
+        df.to_excel("test.xlsx", index=False)
+
+        msg_box = QMessageBox(QMessageBox.Warning, '提示', '匯出成功')
+        msg_box.resize(400, 200)
+        msg_box.exec_()
+        # pass
+    def Import_Excel(self):#匯入excel
+        options = QFileDialog.Options()
+        filename, _ = QFileDialog.getOpenFileName(self, 'Open Excel File', '',
+                                                  'Excel Files (*.xls *.xlsx);;All Files (*)', options=options)
+        if filename:
+            # 读取Excel文件并转换为CSV
+            self.convertExcelToCSV(filename)
+        pass
+
+    def convertExcelToCSV(self, excel_file_path):
+        # 讀取 Excel 文件
+        df = pd.read_excel(excel_file_path)
+        df["Setup_time"] = time.strftime("%Y-%m-%d %H:%M:%S")
+        # 获取Excel文件名，不包含扩展名
+        csv_file_path = 'Static/product_info.csv'
+        # csv_file_path = excel_file_path.rsplit('.', 1)[0] + '.csv'
+
+        # 将DataFrame保存为CSV文件
+
+        df.to_csv(csv_file_path, index=False)
+
+        # 匯入保存後 刷新csv
+        df = pd.read_csv('Static/product_info.csv', header=None,
+                         names=['Product', 'Product_ID', 'ZoneCount', 'Position', 'Setup_time'])
+
+        self.insert_data(self.ui.tableWidget, df)  # 刷新csv資料
+
+        print(f'Saved {csv_file_path}')
+    def Write_Done_LOG(self,Area):
+        Save_path = f'Static/Log/{time.strftime("%Y_%m_%d")}'
+        if not Path(Save_path).exists():
+            Path(Save_path).mkdir(parents=True, exist_ok=True)
+        # 保存excel
+        excel_path = f'{Save_path}/{time.strftime("%Y-%m-%d")}_包裝紀錄.xlsx'
+
+        df = pd.read_csv('Static/product_info.csv')
+
+        try:
+            mask = df['Product_ID'] == self.ui.Main_Prod_ID.text()
+            # 新数据字典
+            new_data = {
+                "Product": [df.loc[mask, 'Product'].item()],
+                "Product_ID": [self.ui.Main_Prod_ID.text()],
+                "SN": [self.ui.Main_Prod_SN.text()],
+                "Done Zone": [Area],
+                "DoneTime": [time.strftime('%Y-%m-%d %H:%M:%S')]
+            }
+        except:
+            print(traceback.print_exc())
+        # 将字典转换为DataFrame
+        new_df = pd.DataFrame(new_data)
+
+        # 检查文件是否存在
+        if os.path.exists(excel_path):
+            # 读取已存在的Excel文件
+            existing_df = pd.read_excel(excel_path)
+            # 将新数据追加到已有DataFrame
+            updated_df = pd.concat([existing_df, new_df], ignore_index=True)
+        else:
+            # 文件不存在，使用新数据创建DataFrame
+            updated_df = new_df
+
+        # 保存或覆盖Excel文件
+        updated_df.to_excel(excel_path, index=False, engine='openpyxl')
+
+    def Write_Defect_LOG(self,image_file_name,detect_area):
+
+        Fault_Save_path = f'Static/Log/{time.strftime("%Y_%m_%d")}'
+        if not Path(Fault_Save_path).exists():
+            Path(Fault_Save_path).mkdir(parents=True, exist_ok=True)
+        # 保存excel
+        excel_path = f'{Fault_Save_path}/{time.strftime("%Y-%m-%d")}_包裝異常紀錄.xlsx'
+
+        df = pd.read_csv('Static/product_info.csv')
+        mask = df['Product_ID'] == self.ui.Main_Prod_ID.text()
+        try:
+            # 新数据字典
+            new_data = {
+                "Product": [df.loc[mask, 'Product'].item()],
+                "Product_ID": [self.ui.Main_Prod_ID.text()],
+                "SN": [self.ui.Main_Prod_SN.text()],
+                "Event Area": [detect_area],
+                "Image Path" : [image_file_name],
+                "Event Time" : [time.strftime('%Y-%m-%d %H:%M:%S')]
+            }
+        except:
+            print(traceback.print_exc())
+        # 将字典转换为DataFrame
+        new_df = pd.DataFrame(new_data)
+
+        # 检查文件是否存在
+        if os.path.exists(excel_path):
+            # 读取已存在的Excel文件
+            existing_df = pd.read_excel(excel_path)
+            # 将新数据追加到已有DataFrame
+            updated_df = pd.concat([existing_df, new_df], ignore_index=True)
+        else:
+            # 文件不存在，使用新数据创建DataFrame
+            updated_df = new_df
+
+        # 保存或覆盖Excel文件
+        updated_df.to_excel(excel_path, index=False, engine='openpyxl')
 
 
 def main():
